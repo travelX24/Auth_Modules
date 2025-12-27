@@ -1,0 +1,23 @@
+{
+    "name": "athka/authkit",
+    "description": "Reusable Auth UI + Forgot/Reset Password module for Laravel",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+      "php": "^8.2",
+      "illuminate/support": "^10.0|^11.0|^12.0"
+    },
+    "autoload": {
+      "psr-4": {
+        "Athka\\AuthKit\\": "src/"
+      }
+    },
+    "extra": {
+      "laravel": {
+        "providers": [
+          "Athka\\AuthKit\\AuthKitServiceProvider"
+        ]
+      }
+    }
+  }
+  
