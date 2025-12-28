@@ -9,6 +9,19 @@ use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
+    public function authenticated(Request $request, $user)
+    {
+        // تحقق من أن المستخدم هو صاحب النظام بناءً على البريد الإلكتروني
+        if ($user->email === 'admin@athkahr.com') {
+            // توجيه صاحب النظام إلى واجهة الـ SaaS Dashboard
+            return redirect()->route('saas.dashboard');  // تأكد أن المسار موجود في routes/web.php
+        }
+    
+        // للمستخدمين العاديين (إذا كنت تستخدم تعديلات إضافية لهم)
+        return redirect()->route('home'); // أو صفحة أخرى
+    }
+    
+
     public function show()
     {
         return view(config('authkit.views.login'));
@@ -20,19 +33,21 @@ class LoginController extends Controller
             'email'    => ['required', 'email'],
             'password' => ['required', 'string'],
         ]);
-
+    
         $remember = $request->boolean('remember');
-
+    
         if (!Auth::attempt($credentials, $remember)) {
             throw ValidationException::withMessages([
                 'email' => [__('auth.failed')],
             ]);
         }
-
+    
         $request->session()->regenerate();
-
-        return redirect()->intended(config('authkit.redirect_after_login', '/'));
+    
+        // تأكد من التوجيه إلى /saas مباشرة
+        return redirect()->route('saas.dashboard');
     }
+    
 
     public function logout(Request $request)
     {

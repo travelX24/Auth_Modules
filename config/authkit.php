@@ -4,7 +4,7 @@ return [
     'enabled' => true, // ✅ فعلها هنا (وليس داخل packages)
 
     // ✅ Redirects (يمكنك تغييرها من مشروعك المستهلك)
-    'redirect_after_login'  => '/',
+    'redirect_after_login'  => '/saas',
     'redirect_after_logout' => '/login',
 
 
