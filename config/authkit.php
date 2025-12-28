@@ -3,10 +3,16 @@
 return [
     'enabled' => true, // ✅ فعلها هنا (وليس داخل packages)
 
+    // ✅ Redirects (يمكنك تغييرها من مشروعك المستهلك)
+    'redirect_after_login'  => '/',
+    'redirect_after_logout' => '/login',
+
+
     'routes' => [
-        'prefix' => 'authkit',   // ✅ يمنع تعارض /login مع الموديول
-        'as'     => 'authkit.',  // ✅ يمنع تعارض أسماء الراوت login/password.request...
-    ],
+    'prefix' => env('AUTHKIT_ROUTE_PREFIX', ''),      // الافتراضي: /login
+    'as'     => env('AUTHKIT_ROUTE_AS', 'authkit.'),  // أسماء الروتات
+],
+
 
     'views' => [
         'login'  => 'authkit::auth.login',
