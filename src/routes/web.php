@@ -5,13 +5,16 @@ use Athka\AuthKit\Http\Controllers\LoginController;
 use Athka\AuthKit\Http\Controllers\ForgotPasswordController;
 use Athka\AuthKit\Http\Controllers\ResetPasswordController;
 
-$prefix = config('authkit.routes.prefix', 'authkit');
-$name   = config('authkit.routes.name', 'authkit.');
+$prefix = trim((string) config('authkit.routes.prefix', ''), '/');
+$as     = config('authkit.routes.as', config('authkit.routes.name', 'authkit.'));
 
-Route::middleware('web')
-    ->prefix($prefix)
-    ->name($name)
-    ->group(function () {
+$route = Route::middleware('web')->name($as);
+
+if ($prefix !== '') {
+    $route->prefix($prefix);
+}
+
+$route->group(function () {
 
         Route::middleware('guest')->group(function () {
             Route::get('/login', [LoginController::class, 'show'])->name('login');

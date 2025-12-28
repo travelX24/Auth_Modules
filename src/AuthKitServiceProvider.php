@@ -22,10 +22,6 @@ class AuthKitServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__ . '/../resources/views' => resource_path('views/vendor/authkit'),
             ], 'authkit-views');
-
-            $this->publishes([
-                __DIR__ . '/../resources/lang' => lang_path('vendor/authkit'),
-            ], 'authkit-lang');
         }
 
         // ✅ لا تفعل أي شيء إلا إذا enabled=true (من config المشروع)
@@ -35,6 +31,5 @@ class AuthKitServiceProvider extends ServiceProvider
 
         $this->loadRoutesFrom(__DIR__ . '/routes/web.php');
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'authkit');
-        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'authkit');
     }
 }

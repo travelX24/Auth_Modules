@@ -8,7 +8,7 @@
 
 
 @php
-    use App\Support\UiMsg;
+    use Athka\AuthKit\Support\UiMsg;
 
     $hasError = $errors->has($name);
     $id = $attributes->get('id') ?? $name;
