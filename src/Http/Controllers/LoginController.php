@@ -81,19 +81,15 @@ class LoginController extends Controller
     }
 
     protected function isSaasAdmin($user): bool
-    {
-        // بريد ثابت للـ system owner
-        if (($user->email ?? null) === 'admin@athkahr.com') {
-            return true;
-        }
-
-        // Spatie Roles
-        if (method_exists($user, 'hasAnyRole')) {
-            return $user->hasAnyRole(['system-admin', 'saas-admin', 'super-admin']);
-        }
-
-        return false;
+{
+    // ✅ Roles أولاً (الأصح)
+    if (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['saas-admin','system-admin','super-admin'])) {
+        return true;
     }
+
+    // ✅ fallback بريد (اختياري)
+    return (($user->email ?? null) === 'admin@athkahr.com');
+}
 
     public function logout(Request $request)
     {
