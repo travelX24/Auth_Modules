@@ -30,14 +30,19 @@ class ResetPasswordController extends Controller
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user) use ($request) {
                 $user->forceFill([
-                    'password'       => Hash::make($request->string('password')),
+                    'password'       => Hash::make((string) $request->input('password')),
                     'remember_token' => Str::random(60),
                 ])->save();
+
             }
         );
 
+        $as = (string) config('authkit.routes.as', 'authkit.');
+        $as = $as === '' ? '' : rtrim($as, '.') . '.';
+
         return $status === Password::PASSWORD_RESET
-            ? redirect()->route(config('authkit.routes.name', 'authkit.').'login')->with('status', __($status))
+            ? redirect()->route($as.'login')->with('status', __($status))
             : back()->withErrors(['email' => __($status)]);
+
     }
 }

@@ -22,8 +22,8 @@
 
     <div class="min-h-screen flex items-center justify-center p-4 relative">
         <!-- Modern card design -->
-        <div class="w-full max-w-7xl overflow-hidden rounded-3xl shadow-2xl relative
-        lg:h-[780px] lg:max-h-[780px]">
+        <div class="w-full max-w-5xl overflow-hidden rounded-3xl shadow-2xl relative
+        lg:h-[680px] lg:max-h-[650px]">
         <!-- Background gradient with pattern -->
             <div class="absolute inset-0 bg-gradient-to-br from-slate-50 to-white"></div>
             <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(99,102,241,0.15)_0%,transparent_50%),radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.1)_0%,transparent_50%)]"></div>
