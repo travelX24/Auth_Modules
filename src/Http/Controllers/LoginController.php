@@ -10,10 +10,6 @@ use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
-    /**
-     * (اختياري) لو تريد تركها موجودة، نخليها ترجع null
-     * لأننا بنوحد المنطق داخل redirectAfterLogin()
-     */
     public function authenticated(Request $request, $user)
     {
         return null;
@@ -43,7 +39,6 @@ class LoginController extends Controller
 
         $user = $request->user();
 
-        // لو عندك Hook وتريد تستخدمه مستقبلاً
         $resp = $this->authenticated($request, $user);
         if ($resp) {
             return $resp;
@@ -54,35 +49,31 @@ class LoginController extends Controller
 
     protected function redirectAfterLogin(Request $request, $user)
     {
-        // ✅ 1) Company Admin -> /company-admin/hello
+        // ✅ 1) Company Admin -> /company-admin/hello (بدون intended نهائياً)
         if ($this->isCompanyAdmin($user)) {
             if (Route::has('company-admin.hello')) {
-                return redirect()->intended(route('company-admin.hello'));
+                return redirect()->route('company-admin.hello');
             }
-            // fallback
-            return redirect()->intended('/');
+            return redirect('/');
         }
 
         // ✅ 2) System/SaaS Admin -> /saas
         if ($this->isSaasAdmin($user)) {
             if (Route::has('saas.dashboard')) {
-                return redirect()->intended(route('saas.dashboard'));
+                return redirect()->route('saas.dashboard');
             }
-            return redirect()->intended('/saas');
+            return redirect('/saas');
         }
 
-        // ✅ 3) باقي المستخدمين -> حسب إعدادات authkit
-        $fallback = config('authkit.redirect_after_login', '/');
-        return redirect()->intended($fallback);
+        // ✅ 3) باقي المستخدمين -> intended أو إعدادات authkit
+        return redirect()->intended(config('authkit.redirect_after_login', '/'));
     }
 
     protected function isCompanyAdmin($user): bool
     {
         // Spatie Roles
-        if (method_exists($user, 'hasRole')) {
-            if ($user->hasRole('company-admin')) {
-                return true;
-            }
+        if (method_exists($user, 'hasRole') && $user->hasRole('company-admin')) {
+            return true;
         }
 
         // fallback: مرتبط بشركة
