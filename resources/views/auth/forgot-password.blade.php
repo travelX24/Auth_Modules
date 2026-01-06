@@ -1,5 +1,5 @@
 <x-authkit::ui.auth-shell active="forgot" :title="tr('Reset your password')">
-    <div class="space-y-4 sm:space-y-5">
+    <div class="space-y-4 sm:space-y-5 lg:space-y-6">
 
         <!-- Header -->
         <div class="text-center">
@@ -26,11 +26,11 @@
                 </x-slot:icon>
             </x-authkit::ui.auth-input>
     
-            <x-ui.primary-button>
+            <x-ui.primary-button class="w-full">
                 @tr('Send reset link')
             </x-ui.primary-button>
 
-            <div class="text-center pt-1">
+            <div class="text-center pt-2">
                 <a href="{{ route('authkit.login') }}" class="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold text-[color:var(--brand-from)] hover:text-[color:var(--brand-to)] transition-colors">
                     <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>

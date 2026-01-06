@@ -24,8 +24,8 @@
 
 <div class="relative">
     @if($label)
-    <div class="mb-2 flex items-center justify-between gap-3" dir="{{ $isRtl ? 'rtl' : 'ltr' }}">
-        <label for="{{ $id }}" class="text-sm font-semibold text-slate-700">
+    <div class="mb-1.5 sm:mb-2 flex items-center justify-between gap-2 sm:gap-3" dir="{{ $isRtl ? 'rtl' : 'ltr' }}">
+        <label for="{{ $id }}" class="text-xs sm:text-sm font-semibold text-slate-700">
             {{ $label }}
         </label>
 
@@ -46,13 +46,13 @@
     <div class="group relative">
         {{-- Icon (logical start) --}}
         @if($hasIcon)
-            <div class="absolute inset-y-0 start-4 flex items-center text-slate-400 group-focus-within:text-[color:var(--brand-from)] transition-colors duration-300 z-10">
+            <div class="absolute inset-y-0 start-3 sm:start-4 flex items-center text-slate-400 group-focus-within:text-[color:var(--brand-from)] transition-colors duration-300 z-10">
                 {{ $icon }}
             </div>
         @endif
 
         {{-- Glow border --}}
-        <div class="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)]
+        <div class="absolute -inset-0.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[color:var(--brand-from)] via-[color:var(--brand-via)] to-[color:var(--brand-to)]
                     opacity-0 group-focus-within:opacity-20 blur transition-opacity duration-300
                     {{ $hasError ? '!opacity-20 !from-red-500 !to-red-500' : '' }}">
         </div>
@@ -66,9 +66,9 @@
             placeholder="{{ $placeholder }}"
             autocomplete="{{ $name }}"
             {{ $attributes->except(['class','id'])->merge([
-                'class' => 'relative w-full rounded-2xl border bg-white/90 shadow-sm
-                            '.($hasIcon ? 'ps-12 pe-4' : 'px-4').' py-3.5
-                            text-slate-900 placeholder:text-slate-400/70
+                'class' => 'relative w-full rounded-xl sm:rounded-2xl border bg-white/90 shadow-sm
+                            '.($hasIcon ? 'ps-10 sm:ps-12 pe-3 sm:pe-4' : 'px-3 sm:px-4').' py-2.5 sm:py-3 lg:py-3.5
+                            text-sm sm:text-base text-slate-900 placeholder:text-slate-400/70
                             focus:outline-none focus:ring-0 focus:bg-white
                             border-slate-200/80 transition-all duration-300
                             '.($hasError ? 'border-red-300 focus:border-red-400' : 'group-focus-within:border-transparent')
@@ -76,7 +76,7 @@
         />
 
         {{-- Focus outline --}}
-        <div class="absolute inset-0 rounded-2xl border-2 border-transparent group-focus-within:border-[color:var(--brand-from)]/30 pointer-events-none transition-all duration-300"></div>
+        <div class="absolute inset-0 rounded-xl sm:rounded-2xl border-2 border-transparent group-focus-within:border-[color:var(--brand-from)]/30 pointer-events-none transition-all duration-300"></div>
     </div>
 
 </div>

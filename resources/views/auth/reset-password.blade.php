@@ -1,11 +1,11 @@
 <x-authkit::ui.auth-shell active="forgot" :title="tr('Reset password')" :show-tabs="false">
     <div class="space-y-6 sm:space-y-8">
         <!-- Icon + Header (مجموعة واحدة) -->
-        <div class="space-y-4 sm:space-y-5">
+        <div class="space-y-4">
             <div class="flex justify-center">
                 <div class="relative">
-                    <div class="h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[color:var(--brand-from)]/10 via-[color:var(--brand-via)]/10 to-[color:var(--brand-to)]/10 flex items-center justify-center">
-                        <svg class="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-[color:var(--brand-from)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="h-14 w-14 sm:h-16 sm:w-16 lg:h-18 lg:w-18 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[color:var(--brand-from)]/10 via-[color:var(--brand-via)]/10 to-[color:var(--brand-to)]/10 flex items-center justify-center">
+                        <svg class="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 text-[color:var(--brand-from)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                   d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
@@ -24,12 +24,12 @@
         <x-ui.flash-toast />
     
         <!-- Form -->
-        <form method="POST" action="{{ route('authkit.password.update') }}" class="space-y-4 sm:space-y-5">
+        <form method="POST" action="{{ route('authkit.password.update') }}" class="space-y-5 sm:space-y-6">
             @csrf
             <input type="hidden" name="token" value="{{ $token }}">
     
             {{-- Fields --}}
-            <div class="space-y-3 sm:space-y-4">
+            <div class="space-y-4">
                 <x-authkit::ui.auth-input
                     name="email"
                     type="email"
@@ -60,8 +60,8 @@
             </div>
     
             {{-- Actions --}}
-            <div class="space-y-2 sm:space-y-3 pt-1">
-                <x-ui.primary-button>
+            <div class="space-y-3">
+                <x-ui.primary-button class="w-full">
                     @tr('Update password')
                 </x-ui.primary-button>
 
