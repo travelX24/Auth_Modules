@@ -67,7 +67,7 @@
                 </label>
             </div>
 
-            <x-ui.primary-button class="mt-8" >
+            <x-ui.primary-button class="mt-4" >
                 @tr('Sign in')
             </x-ui.primary-button>
         </form>

@@ -39,6 +39,12 @@ class LoginController extends Controller
 
         $user = $request->user();
 
+        // ✅ التحقق من انتهاء الاشتراك قبل المتابعة
+        $subscriptionCheck = $this->checkSubscriptionExpiry($request, $user);
+        if ($subscriptionCheck) {
+            return $subscriptionCheck;
+        }
+
         $resp = $this->authenticated($request, $user);
         if ($resp) {
             return $resp;
@@ -90,6 +96,52 @@ class LoginController extends Controller
     // ✅ fallback بريد (اختياري)
     return (($user->email ?? null) === 'admin@athkahr.com');
 }
+
+    /**
+     * ✅ التحقق من انتهاء الاشتراك
+     */
+    protected function checkSubscriptionExpiry(Request $request, $user)
+    {
+        // ✅ فقط للمستخدمين المرتبطين بشركة
+        if (! $user->saas_company_id) {
+            return null;
+        }
+
+        // ✅ التحقق من وجود package Saas
+        if (! class_exists(\App\Modules\Saas\Models\SaasCompanyOtherinfo::class)) {
+            return null;
+        }
+
+        $settings = \App\Modules\Saas\Models\SaasCompanyOtherinfo::where('company_id', $user->saas_company_id)->first();
+
+        if (! $settings || ! $settings->subscription_ends_at) {
+            return null;
+        }
+
+        // ✅ التحقق من انتهاء الاشتراك
+        if ($settings->subscription_ends_at->isPast()) {
+            // ✅ حفظ الرسالة أولاً قبل invalidate
+            $errorMessage = function_exists('tr')
+                ? tr('Your subscription has expired. Please contact system administration to renew your subscription.')
+                : 'Your subscription has expired. Please contact system administration to renew your subscription.';
+
+            Auth::logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            // ✅ حفظ الرسالة بعد regenerateToken مباشرة
+            $request->session()->flash('error', $errorMessage);
+
+            $loginRoute = Route::has('authkit.login')
+                ? route('authkit.login')
+                : (Route::has('login') ? route('login') : '/login');
+
+            return redirect($loginRoute);
+        }
+
+        return null;
+    }
 
     public function logout(Request $request)
     {
