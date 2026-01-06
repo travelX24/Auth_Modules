@@ -9,8 +9,6 @@
 
         <x-ui.flash-toast />
 
-
-
         <!-- Form -->
         <form method="POST" action="{{ route('authkit.password.email') }}" class="space-y-5">
             @csrf
