@@ -54,7 +54,7 @@
 
             <x-ui.password-input name="password" :label="tr('Password')" placeholder="••••••••" />
 
-            <div class="mt-3 sm:mt-4 flex items-center justify-between">
+            <div class="mt-3 sm:mt-4">
                 <label class="flex items-center gap-2 sm:gap-3 cursor-pointer group">
                     <div class="relative">
                         <input type="checkbox" name="remember" class="sr-only peer">
@@ -67,7 +67,7 @@
                 </label>
             </div>
 
-            <x-ui.primary-button class="mt-2 sm:mt-3 w-full" >
+            <x-ui.primary-button class="w-full" >
                 @tr('Sign in')
             </x-ui.primary-button>
         </form>

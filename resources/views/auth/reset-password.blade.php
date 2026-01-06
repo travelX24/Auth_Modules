@@ -1,23 +1,9 @@
 <x-authkit::ui.auth-shell active="forgot" :title="tr('Reset password')" :show-tabs="false">
     <div class="space-y-6 sm:space-y-8">
-        <!-- Icon + Header (مجموعة واحدة) -->
-        <div class="space-y-4">
-            <div class="flex justify-center">
-                <div class="relative">
-                    <div class="h-14 w-14 sm:h-16 sm:w-16 lg:h-18 lg:w-18 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[color:var(--brand-from)]/10 via-[color:var(--brand-via)]/10 to-[color:var(--brand-to)]/10 flex items-center justify-center">
-                        <svg class="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 text-[color:var(--brand-from)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                    </div>
-                    <div class="absolute -inset-3 sm:-inset-4 bg-gradient-to-r from-[color:var(--brand-from)]/20 to-[color:var(--brand-to)]/20 rounded-2xl sm:rounded-3xl blur-xl opacity-50 animate-pulse"></div>
-                </div>
-            </div>
-    
-            <div class="text-center space-y-1.5 sm:space-y-2">
-                <h1 class="text-xl sm:text-2xl font-bold text-slate-900">@tr('Reset password')</h1>
-                <p class="text-sm sm:text-base text-slate-500">@tr('Choose a new password')</p>
-            </div>
+        <!-- Header -->
+        <div class="text-center space-y-1.5 sm:space-y-2">
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-900">@tr('Reset password')</h1>
+            <p class="text-sm sm:text-base text-slate-500">@tr('Choose a new password')</p>
         </div>
     
         <!-- Toast -->

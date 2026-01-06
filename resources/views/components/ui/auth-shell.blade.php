@@ -22,7 +22,7 @@
 
     <div class="min-h-screen flex items-center justify-center p-3 sm:p-4 md:p-6 relative">
         <!-- Modern card design -->
-        <div class="w-full max-w-5xl overflow-hidden rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl relative
+        <div class="w-full max-w-6xl overflow-hidden rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl relative
         lg:h-[600px] lg:max-h-[600px]">
         <!-- Background gradient with pattern -->
             <div class="absolute inset-0 bg-gradient-to-br from-slate-50 to-white"></div>
@@ -111,12 +111,7 @@
                         </div>
                     </div>
                     
-                    <!-- Floating particles -->
-                    <div class="absolute bottom-10 {{ $isRtl ? 'right-8' : 'left-8' }} flex gap-1.5">
-                        @foreach(range(1, 3) as $i)
-                        <div class="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[color:var(--brand-from)] to-[color:var(--brand-to)] opacity-50 animate-bounce" style="animation-delay: {{ $i * 0.1 }}s"></div>
-                        @endforeach
-                    </div>
+                    
                 </div>
                 
                 <!-- Form side - Clean design -->
@@ -192,14 +187,7 @@
 </div>
 
                     <!-- Footer -->
-                    <div class="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-slate-200">
-                        <p class="text-center text-xs sm:text-sm text-slate-500">
-                            @tr('By continuing, you agree to our')
-                            <a href="#" class="font-semibold text-[color:var(--brand-from)] hover:text-[color:var(--brand-to)]">@tr('Terms')</a>
-                            @tr('and')
-                            <a href="#" class="font-semibold text-[color:var(--brand-from)] hover:text-[color:var(--brand-to)]">@tr('Privacy Policy')</a>
-                        </p>
-                    </div>
+                
                 </div>
             </div>
         </div>
