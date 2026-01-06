@@ -23,7 +23,7 @@
     <div class="min-h-screen flex items-center justify-center p-3 sm:p-4 relative">
         <!-- Modern card design -->
         <div class="w-full max-w-5xl overflow-hidden rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl relative
-        lg:h-[600px] lg:max-h-[600px]">
+        lg:h-[600px] lg:max-h-[600px] lg:min-h-[600px]">
         <!-- Background gradient with pattern -->
             <div class="absolute inset-0 bg-gradient-to-br from-slate-50 to-white"></div>
             <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(99,102,241,0.15)_0%,transparent_50%),radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.1)_0%,transparent_50%)]"></div>
@@ -120,9 +120,9 @@
                 </div>
                 
                 <!-- Form side - Clean design -->
-                <div class="p-6 sm:p-8 lg:p-10 xl:p-12 h-full flex flex-col">
+                <div class="p-6 sm:p-8 lg:p-10 xl:p-12 h-full flex flex-col min-h-0 overflow-hidden">
                     <!-- Mobile header -->
-                    <div class="lg:hidden mb-6">
+                    <div class="lg:hidden mb-6 flex-shrink-0">
                         <div class="flex items-center justify-between mb-5">
                             <div class="flex items-center gap-2.5">
                                 <div class="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br from-[color:var(--brand-from)] to-[color:var(--brand-to)] flex items-center justify-center">
@@ -151,7 +151,7 @@
                     @if($showTabs)
 
                     <!-- Desktop header + Tabs (Centered) -->
-<div class="hidden lg:block mb-8 xl:mb-10">
+<div class="hidden lg:block mb-8 xl:mb-10 flex-shrink-0">
     <div class="text-center">
         <h1 class="text-2xl xl:text-2.5xl font-bold text-slate-900 leading-tight">
             @tr('Welcome back')
@@ -183,7 +183,7 @@
 </div>
 @endif
                     
-<div class="flex-1 flex items-start lg:items-center">
+<div class="flex-1 flex items-start lg:items-center min-h-0 overflow-y-auto">
     <div class="w-full max-w-md mx-auto">
         <div class="relative">
             {{ $slot }}
@@ -192,12 +192,12 @@
 </div>
 
                     <!-- Footer -->
-                    <div class="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-slate-200">
-                        <p class="text-center text-xs sm:text-sm text-slate-500 leading-relaxed">
+                    <div class="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-slate-200 flex-shrink-0">
+                        <p class="text-center text-xs sm:text-sm text-slate-500 leading-relaxed break-words {{ $isRtl ? 'rtl' : 'ltr' }}" dir="{{ $isRtl ? 'rtl' : 'ltr' }}">
                             @tr('By continuing, you agree to our')
-                            <a href="#" class="font-semibold text-[color:var(--brand-from)] hover:text-[color:var(--brand-to)] transition-colors">@tr('Terms')</a>
+                            <a href="#" class="font-semibold text-[color:var(--brand-from)] hover:text-[color:var(--brand-to)] transition-colors whitespace-nowrap">@tr('Terms')</a>
                             @tr('and')
-                            <a href="#" class="font-semibold text-[color:var(--brand-from)] hover:text-[color:var(--brand-to)] transition-colors">@tr('Privacy Policy')</a>
+                            <a href="#" class="font-semibold text-[color:var(--brand-from)] hover:text-[color:var(--brand-to)] transition-colors whitespace-nowrap">@tr('Privacy Policy')</a>
                         </p>
                     </div>
                 </div>
