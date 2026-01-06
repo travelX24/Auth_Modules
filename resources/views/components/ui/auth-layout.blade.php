@@ -71,9 +71,10 @@
     }
   </style>
   
-  
-<x-ui.toast />
 <body class="antialiased {{ $isRtl ? 'font-ar' : 'font-sans' }}">
+    {{-- ✅ نقل toast component إلى داخل body --}}
+    <x-ui.toast />
+    
     {{ $slot }}
 </body>
 </html>

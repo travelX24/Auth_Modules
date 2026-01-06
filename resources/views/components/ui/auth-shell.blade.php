@@ -112,7 +112,7 @@
                     </div>
                     
                     <!-- Floating particles -->
-                    <div class="absolute bottom-10 {{ $isRtl ? 'right-10' : 'left-10' }} flex gap-2">
+                    <div class="absolute bottom-13 {{ $isRtl ? 'right-10' : 'left-10' }} flex gap-2">
                         @foreach(range(1, 3) as $i)
                         <div class="w-2 h-2 rounded-full bg-gradient-to-r from-[color:var(--brand-from)] to-[color:var(--brand-to)] opacity-50 animate-bounce" style="animation-delay: {{ $i * 0.1 }}s"></div>
                         @endforeach
