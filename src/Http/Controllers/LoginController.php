@@ -39,6 +39,12 @@ class LoginController extends Controller
 
         $user = $request->user();
 
+        // ✅ التحقق من حالة الشركة (تفعيل/إيقاف) قبل المتابعة
+        $companyStatusCheck = $this->checkCompanyStatus($request, $user);
+        if ($companyStatusCheck) {
+            return $companyStatusCheck;
+        }
+
         // ✅ التحقق من انتهاء الاشتراك قبل المتابعة
         $subscriptionCheck = $this->checkSubscriptionExpiry($request, $user);
         if ($subscriptionCheck) {
@@ -96,6 +102,58 @@ class LoginController extends Controller
     // ✅ fallback بريد (اختياري)
     return (($user->email ?? null) === 'admin@athkahr.com');
 }
+
+    /**
+     * ✅ التحقق من حالة الشركة (تفعيل/إيقاف)
+     */
+    protected function checkCompanyStatus(Request $request, $user)
+    {
+        // ✅ فقط للمستخدمين المرتبطين بشركة
+        if (! $user->saas_company_id) {
+            return null;
+        }
+
+        // ✅ التحقق من وجود package Saas
+        $saasCompanyClass = class_exists(\Athka\Saas\Models\SaasCompany::class)
+            ? \Athka\Saas\Models\SaasCompany::class
+            : (class_exists(\App\Modules\Saas\Models\SaasCompany::class)
+                ? \App\Modules\Saas\Models\SaasCompany::class
+                : null);
+
+        if (! $saasCompanyClass) {
+            return null;
+        }
+
+        $company = $saasCompanyClass::find($user->saas_company_id);
+
+        if (! $company) {
+            return null;
+        }
+
+        // ✅ التحقق من حالة الشركة
+        if (! $company->is_active) {
+            // ✅ حفظ الرسالة أولاً قبل invalidate
+            $errorMessage = function_exists('tr')
+                ? tr('Your company account is currently deactivated. Please contact system administration to activate your company account.')
+                : 'Your company account is currently deactivated. Please contact system administration to activate your company account.';
+
+            Auth::logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            // ✅ حفظ الرسالة بعد regenerateToken مباشرة
+            $request->session()->flash('error', $errorMessage);
+
+            $loginRoute = Route::has('authkit.login')
+                ? route('authkit.login')
+                : (Route::has('login') ? route('login') : '/login');
+
+            return redirect($loginRoute);
+        }
+
+        return null;
+    }
 
     /**
      * ✅ التحقق من انتهاء الاشتراك
