@@ -15,7 +15,7 @@
     "extra": {
       "laravel": {
         "providers": [
-          "Athka\\AuthKit\\AuthKitServiceProvider"
+          "Athka\\AuthKit\\Providers\\AuthKitServiceProvider"
         ]
       }
     }

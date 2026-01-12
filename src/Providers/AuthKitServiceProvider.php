@@ -1,6 +1,6 @@
 <?php
 
-namespace Athka\AuthKit;
+namespace Athka\AuthKit\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -8,7 +8,7 @@ class AuthKitServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/authkit.php', 'authkit');
+        $this->mergeConfigFrom(__DIR__ . '/../Config/authkit.php', 'authkit');
     }
 
     public function boot(): void
@@ -16,11 +16,11 @@ class AuthKitServiceProvider extends ServiceProvider
         // ✅ publishing يكون متاح دائماً
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../config/authkit.php' => config_path('authkit.php'),
+                __DIR__ . '/../Config/authkit.php' => config_path('authkit.php'),
             ], 'authkit-config');
 
             $this->publishes([
-                __DIR__ . '/../resources/views' => resource_path('views/vendor/authkit'),
+                __DIR__ . '/../Resources/views' => resource_path('views/vendor/authkit'),
             ], 'authkit-views');
         }
 
@@ -29,7 +29,7 @@ class AuthKitServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->loadRoutesFrom(__DIR__ . '/routes/web.php');
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'authkit');
+        $this->loadRoutesFrom(__DIR__ . '/../Routes/web.php');
+        $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'authkit');
     }
 }
