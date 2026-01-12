@@ -61,8 +61,14 @@ class LoginController extends Controller
 
     protected function redirectAfterLogin(Request $request, $user)
     {
-        // ✅ 1) Company Admin -> /company-admin/hello (بدون intended نهائياً)
+        // ✅ 1) Company Admin -> بناء URL على دومين الشركة مباشرة
         if ($this->isCompanyAdmin($user)) {
+            $companyUrl = $this->buildCompanyAdminUrl($request, $user);
+            if ($companyUrl) {
+                return redirect()->away($companyUrl);
+            }
+
+            // Fallback: استخدام route إذا لم نتمكن من بناء URL
             if (Route::has('company-admin.hello')) {
                 return redirect()->route('company-admin.hello');
             }
@@ -81,6 +87,54 @@ class LoginController extends Controller
         return redirect()->intended(config('authkit.redirect_after_login', '/'));
     }
 
+    /**
+     * ✅ بناء URL على دومين الشركة مباشرة
+     */
+    protected function buildCompanyAdminUrl(Request $request, $user): ?string
+    {
+        if (empty($user->saas_company_id)) {
+            return null;
+        }
+
+        // ✅ التحقق من وجود package Saas
+        $saasCompanyClass = class_exists(\Athka\Saas\Models\SaasCompany::class)
+            ? \Athka\Saas\Models\SaasCompany::class
+            : (class_exists(\App\Modules\Saas\Models\SaasCompany::class)
+                ? \App\Modules\Saas\Models\SaasCompany::class
+                : null);
+
+        if (! $saasCompanyClass) {
+            return null;
+        }
+
+        $company = $saasCompanyClass::find($user->saas_company_id);
+        if (! $company || empty($company->primary_domain)) {
+            return null;
+        }
+
+        // ✅ بناء URL على دومين الشركة
+        $host = strtolower($request->getHost());
+        $base = strtolower(env('TENANT_BASE_DOMAIN', 'athkahr.com'));
+        $central = strtolower(env('CENTRAL_DOMAIN', $base));
+
+        // ✅ لو نحن على nip.io استخرج IP واصنع base/central ديناميكي
+        if (preg_match('/\.(\d{1,3}(?:\.\d{1,3}){3})\.nip\.io$/', $host, $m)) {
+            $ip = $m[1];
+            $base = "athkahr.$ip.nip.io";
+            $central = $base;
+        }
+
+        $desiredHost = strtolower($company->primary_domain.'.'.$base);
+        $scheme = $request->isSecure() ? 'https' : 'http';
+        $port = $request->getPort();
+        $portPart = in_array($port, [80, 443], true) ? '' : ':'.$port;
+
+        // ✅ بناء URL كامل على دومين الشركة
+        $url = $scheme.'://'.$desiredHost.$portPart.'/company-admin/hello';
+
+        return $url;
+    }
+
     protected function isCompanyAdmin($user): bool
     {
         // Spatie Roles
@@ -93,15 +147,15 @@ class LoginController extends Controller
     }
 
     protected function isSaasAdmin($user): bool
-{
-    // ✅ Roles أولاً (الأصح)
-    if (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['saas-admin','system-admin','super-admin'])) {
-        return true;
-    }
+    {
+        // ✅ Roles أولاً (الأصح)
+        if (method_exists($user, 'hasAnyRole') && $user->hasAnyRole(['saas-admin', 'system-admin', 'super-admin'])) {
+            return true;
+        }
 
-    // ✅ fallback بريد (اختياري)
-    return (($user->email ?? null) === 'admin@athkahr.com');
-}
+        // ✅ fallback بريد (اختياري)
+        return (($user->email ?? null) === 'admin@athkahr.com');
+    }
 
     /**
      * ✅ التحقق من حالة الشركة (تفعيل/إيقاف)
