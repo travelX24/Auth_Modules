@@ -15,54 +15,8 @@ class LoginController extends Controller
         return null;
     }
 
-    public function show(Request $request)
+    public function show()
     {
-        // ✅ إذا كان المستخدم مسجل دخول بالفعل -> إعادة توجيه حسب الدومين
-        if (Auth::check()) {
-            $user = Auth::user();
-            $host = strtolower($request->getHost());
-            
-            $base = strtolower(env('TENANT_BASE_DOMAIN', 'athkahr.com'));
-            $central = strtolower(env('CENTRAL_DOMAIN', $base));
-            
-            // ✅ لو نحن على nip.io استخرج IP واصنع base/central ديناميكي
-            if (preg_match('/\.(\d{1,3}(?:\.\d{1,3}){3})\.nip\.io$/', $host, $m)) {
-                $ip = $m[1];
-                $base = "athkahr.$ip.nip.io";
-                $central = $base;
-            }
-            
-            $isOnCentralDomain = ($host === $central || $host === 'www.'.$central);
-            
-            // ✅ إذا كان على الدومين المركزي وكان SaaS Admin -> إعادة توجيه لـ SaaS
-            if ($isOnCentralDomain && $this->isSaasAdmin($user)) {
-                if (Route::has('saas.dashboard')) {
-                    return redirect()->route('saas.dashboard');
-                }
-                return redirect('/saas');
-            }
-            
-            // ✅ إذا كان على دومين الشركة وكان Company Admin -> إعادة توجيه لصفحة الشركة
-            if (! $isOnCentralDomain && $this->isCompanyAdmin($user)) {
-                if (Route::has('company-admin.hello')) {
-                    return redirect()->route('company-admin.hello');
-                }
-                return redirect('/company-admin/hello');
-            }
-            
-            // ✅ إذا كان SaaS Admin على دومين الشركة -> إعادة توجيه للدومين المركزي
-            if (! $isOnCentralDomain && $this->isSaasAdmin($user)) {
-                $scheme = $request->isSecure() ? 'https' : 'http';
-                $port = $request->getPort();
-                $portPart = in_array($port, [80, 443], true) ? '' : ':'.$port;
-                $target = $scheme.'://'.$central.$portPart.'/saas';
-                return redirect()->away($target);
-            }
-            
-            // ✅ fallback: إعادة توجيه للصفحة الرئيسية
-            return redirect('/');
-        }
-        
         return view(config('authkit.views.login'));
     }
 
