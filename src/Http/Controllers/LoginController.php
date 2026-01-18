@@ -220,11 +220,19 @@ class LoginController extends Controller
         }
 
         // ✅ التحقق من وجود package Saas
-        if (! class_exists(\App\Modules\Saas\Models\SaasCompanyOtherinfo::class)) {
-            return null;
-        }
+        $model = class_exists(\Athka\Saas\Models\SaasCompanyOtherinfo::class)
+    ? \Athka\Saas\Models\SaasCompanyOtherinfo::class
+    : (class_exists(\App\Modules\Saas\Models\SaasCompanyOtherinfo::class)
+        ? \App\Modules\Saas\Models\SaasCompanyOtherinfo::class
+        : null);
 
-        $settings = \App\Modules\Saas\Models\SaasCompanyOtherinfo::where('company_id', $user->saas_company_id)->first();
+if (! $model) {
+    return null;
+}
+
+$settings = $model::where('company_id', $user->saas_company_id)->first();
+
+
 
         if (! $settings || ! $settings->subscription_ends_at) {
             return null;
