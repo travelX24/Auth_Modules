@@ -49,25 +49,47 @@ class ResetPasswordNotification extends Notification
             );
         }
 
-        $url = url(route($routeName, [
-            'token' => $this->token,
-            'email' => $notifiable->getEmailForPasswordReset(),
-        ], false));
+        $url = route($routeName, ['token' => $this->token], true);
+        $url .= (strpos($url, '?') === false ? '?' : '&') . 'email=' . urlencode($notifiable->getEmailForPasswordReset());
 
         $minutes = (int) config('auth.passwords.' . config('auth.defaults.passwords') . '.expire');
-        $appName = (string) config('app.name');
+        $appName = (string) config('app.name', 'Athka HR');
+
+        // Fetch Company Name
+        $companyName = $appName;
+        if (!empty($notifiable->saas_company_id)) {
+             $saasCompanyClass = \Athka\Saas\Models\SaasCompany::class;
+             if (class_exists($saasCompanyClass)) {
+                 $company = $saasCompanyClass::find($notifiable->saas_company_id);
+                 if ($company) {
+                     $companyName = app()->getLocale() == 'ar' ? ($company->legal_name_ar ?? $company->legal_name_en) : ($company->legal_name_en ?? $company->legal_name_ar);
+                 }
+             }
+        }
+
+        // Use Employee Name if available
+        $displayName = $notifiable->name;
+        if ($notifiable->employee) {
+            $displayName = app()->getLocale() == 'ar' ? ($notifiable->employee->name_ar ?? $notifiable->employee->name_en) : ($notifiable->employee->name_en ?? $notifiable->employee->name_ar);
+        }
 
         $prev = App::getLocale();
         App::setLocale($this->lang);
 
         try {
+            $email = $notifiable->getEmailForPasswordReset();
+            // بناء الرابط بشكل مباشر لضمان عدم وجود مشاكل في الروابط
+            $url = url("/reset-password/{$this->token}?email=" . urlencode($email));
+
             return (new MailMessage)
-                ->subject(__('Reset password - :app', ['app' => $appName]))
+                ->subject('Reset Password for ' . $companyName)
                 ->view(config('authkit.mail.reset', 'authkit::mail.reset-password'), [
-                    'name'    => $notifiable->name ?? '',
-                    'url'     => $url,
-                    'minutes' => $minutes,
-                    'appName' => $appName,
+                    'name'        => $displayName,
+                    'email'       => $notifiable->email,
+                    'url'         => $url,
+                    'minutes'     => $minutes,
+                    'appName'     => $appName,
+                    'companyName' => $companyName,
                 ]);
         } finally {
             App::setLocale($prev);

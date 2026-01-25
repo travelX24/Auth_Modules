@@ -21,7 +21,7 @@
                     type="email"
                     :label="tr('Email address')"
                     placeholder="your@email.com"
-                    :value="request('email')"
+                    :value="$email"
                     readonly
                     class="bg-slate-50/70 cursor-not-allowed">
                     <x-slot:icon>
