@@ -77,9 +77,20 @@ class ResetPasswordNotification extends Notification
         App::setLocale($this->lang);
 
         try {
-            $email = $notifiable->getEmailForPasswordReset();
-            // بناء الرابط بشكل مباشر لضمان عدم وجود مشاكل في الروابط
-            $url = url("/reset-password/{$this->token}?email=" . urlencode($email));
+               $email = $notifiable->getEmailForPasswordReset();
+
+                $custom = config('authkit.password_reset_url');
+                if ($custom) {
+                    // مثال: myapp://reset-password?token={token}&email={email}
+                    $url = str_replace(
+                        ['{token}', '{email}'],
+                        [$this->token, urlencode($email)],
+                        (string) $custom
+                    );
+                } else {
+                    // fallback: رابط الويب الحالي
+                    $url = url("/reset-password/{$this->token}?email=" . urlencode($email));
+                }
 
             return (new MailMessage)
                 ->subject('Reset Password for ' . $companyName)

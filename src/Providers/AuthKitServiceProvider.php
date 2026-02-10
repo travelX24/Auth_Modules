@@ -30,6 +30,9 @@ class AuthKitServiceProvider extends ServiceProvider
         }
 
         $this->loadRoutesFrom(__DIR__ . '/../Routes/web.php');
+        if (config('authkit.api.enabled', true)) {
+            $this->loadRoutesFrom(__DIR__ . '/../Routes/api.php');
+        }
         $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'authkit');
     }
 }

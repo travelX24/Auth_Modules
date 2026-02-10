@@ -1,18 +1,33 @@
 <?php
-
 return [
-    'enabled' => true, // ✅ فعلها هنا (وليس داخل packages)
+    'enabled' => true,
 
-    // ✅ Redirects (يمكنك تغييرها من مشروعك المستهلك)
     'redirect_after_login'  => '/saas',
     'redirect_after_logout' => '/login',
 
-
     'routes' => [
-    'prefix' => env('AUTHKIT_ROUTE_PREFIX', ''),      // الافتراضي: /login
-    'as'     => env('AUTHKIT_ROUTE_AS', 'authkit.'),  // أسماء الروتات
-],
+        'prefix' => env('AUTHKIT_ROUTE_PREFIX', ''),
+        'as'     => env('AUTHKIT_ROUTE_AS', 'authkit.'),
+    ],
 
+    // ✅ NEW: API Settings (للتطبيق)
+    'api' => [
+        'enabled'         => env('AUTHKIT_API_ENABLED', true),
+        'prefix'          => env('AUTHKIT_API_PREFIX', 'api/auth'),
+        'as'              => env('AUTHKIT_API_AS', 'authkit.api.'),
+        'middleware'      => ['api'],
+        'auth_middleware' => ['auth:sanctum'],
+        'token_name'      => env('AUTHKIT_TOKEN_NAME', 'mobile'),
+        'token_abilities' => ['*'],
+
+        'employees_only'  => env('AUTHKIT_API_EMPLOYEES_ONLY', true), // ✅ NEW
+    ],
+
+
+    // ✅ NEW (اختياري): Deep Link / Frontend URL
+    // مثال للتطبيق: myapp://reset-password?token={token}&email={email}
+    // لو تركته null بيستخدم رابط الويب الحالي /reset-password/{token}?email=...
+    'password_reset_url' => env('AUTHKIT_PASSWORD_RESET_URL', null),
 
     'views' => [
         'login'  => 'authkit::auth.login',
