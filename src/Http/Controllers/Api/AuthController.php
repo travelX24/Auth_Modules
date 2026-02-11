@@ -300,6 +300,7 @@ class AuthController extends WebLoginController
                 if (method_exists($employee, 'department')) $rels[] = 'department';
                 if (method_exists($employee, 'jobTitle'))   $rels[] = 'jobTitle';
                 if (method_exists($employee, 'job_title'))  $rels[] = 'job_title';
+                if (method_exists($employee, 'documents'))  $rels[] = 'documents';
 
                 if (!empty($rels)) {
                     $employee->loadMissing($rels);
@@ -340,6 +341,9 @@ class AuthController extends WebLoginController
                 'name_en'  => $employee->name_en ?? null,
                 'mobile'   => $employee->mobile ?? null,
                 'gender'   => $employee->gender ?? null,
+                'personal_photo_path' => $employee->documents->where('type', 'personal_photo')->first()?->file_path 
+                    ?? $employee->personal_photo_path 
+                    ?? null,
 
                 'department' => (method_exists($employee, 'department') && $employee->relationLoaded('department') && $employee->department)
                     ? [
