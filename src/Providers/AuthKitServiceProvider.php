@@ -34,5 +34,6 @@ class AuthKitServiceProvider extends ServiceProvider
             $this->loadRoutesFrom(__DIR__ . '/../Routes/api.php');
         }
         $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'authkit');
+        $this->loadTranslationsFrom(__DIR__ . '/../Resources/lang', 'authkit');
     }
 }

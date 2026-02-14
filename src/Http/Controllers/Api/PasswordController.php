@@ -2,6 +2,7 @@
 
 namespace Athka\AuthKit\Http\Controllers\Api;
 
+use Athka\AuthKit\Http\Requests\ChangePasswordRequest;
 use Athka\AuthKit\Http\Requests\ForgotPasswordRequest;
 use Athka\AuthKit\Http\Requests\ResetPasswordRequest;
 use Athka\AuthKit\Support\UiMsg;
@@ -12,6 +13,30 @@ use Illuminate\Support\Str;
 
 class PasswordController extends Controller
 {
+    public function change(ChangePasswordRequest $request)
+    {
+        $user = $request->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'ok'      => false,
+                'message' => __('authkit::auth.password_mismatch') ?: 'The current password you entered is incorrect.',
+                'errors'  => [
+                    'current_password' => [__('authkit::auth.password_mismatch') ?: 'The current password you entered is incorrect.']
+                ],
+            ], 422);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        return response()->json([
+            'ok'      => true,
+            'message' => __('authkit::auth.password_changed') ?: 'Password has been changed successfully.',
+        ]);
+    }
+
     public function forgot(ForgotPasswordRequest $request)
     {
         $status = Password::sendResetLink($request->only('email'));

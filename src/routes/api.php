@@ -21,6 +21,7 @@ Route::prefix($prefix)->as($as)->middleware($mw)->group(function () use ($authMw
     Route::get('/bootstrap', [AuthController::class, 'bootstrap'])->middleware($authMw)->name('bootstrap');
 
     // Password
+    Route::post('/change-password', [PasswordController::class, 'change'])->middleware($authMw)->name('password.change');
     Route::post('/forgot-password', [PasswordController::class, 'forgot'])->name('password.forgot');
     Route::post('/reset-password',  [PasswordController::class, 'reset'])->name('password.reset');
 });

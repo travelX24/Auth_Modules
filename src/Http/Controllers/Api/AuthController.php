@@ -374,6 +374,8 @@ class AuthController extends WebLoginController
                 'is_active'          => $company->is_active ?? null,
                 'subscription_ends_at' => $subscriptionEndsAt,
                 'allowed_users'        => $companyInfo?->allowed_users,
+                'official_email'       => $company->official_email ?? null,
+                'phone_1'              => $company->phone_1 ?? null,
             ] : null,
 
             'roles'       => $roles,
