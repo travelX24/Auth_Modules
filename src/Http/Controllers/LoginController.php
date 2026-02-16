@@ -45,10 +45,14 @@ class LoginController extends Controller
             return $companyStatusCheck;
         }
 
-        // ✅ التحقق من انتهاء الاشتراك قبل المتابعة
         $subscriptionCheck = $this->checkSubscriptionExpiry($request, $user);
         if ($subscriptionCheck) {
             return $subscriptionCheck;
+        }
+
+        $accessTypeCheck = $this->checkWebLoginAccessType($request, $user);
+        if ($accessTypeCheck) {
+            return $accessTypeCheck;
         }
 
         $resp = $this->authenticated($request, $user);
@@ -57,6 +61,7 @@ class LoginController extends Controller
         }
 
         return $this->redirectAfterLogin($request, $user);
+
     }
 
     protected function redirectAfterLogin(Request $request, $user)
@@ -272,4 +277,59 @@ $settings = $model::where('company_id', $user->saas_company_id)->first();
 
         return redirect(config('authkit.redirect_after_logout', '/login'));
     }
+
+    /**
+     *  منع تسجيل الدخول للويب إذا كان الحساب "تطبيق الموارد البشرية فقط"
+     * (يبقى استعماله للموبايل/API حسب نظامك)
+     */
+    protected function checkWebLoginAccessType(Request $request, $user)
+    {
+        $accessType = $user->access_type ?? 'system_and_app';
+
+        if ($accessType === 'hr_app_only') {
+            $errorMessage = function_exists('tr')
+                ? tr('This account is licensed for the HR mobile app only.')
+                : 'This account is licensed for the HR mobile app only.';
+
+            Auth::logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            $request->session()->flash('error', $errorMessage);
+
+            $loginRoute = Route::has('authkit.login')
+                ? route('authkit.login')
+                : (Route::has('login') ? route('login') : '/login');
+
+            return redirect($loginRoute);
+        }
+
+        if ($accessType === 'system_and_app') {
+            $hasRolesRelation = method_exists($user, 'roles');
+            $rolesCount = $hasRolesRelation ? $user->roles()->count() : 0;
+
+            if ($rolesCount === 0 && ! $this->isSaasAdmin($user)) {
+                $errorMessage = function_exists('tr')
+                    ? tr('No role is assigned to your account. Please contact system administration.')
+                    : 'No role is assigned to your account. Please contact system administration.';
+
+                Auth::logout();
+
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                $request->session()->flash('error', $errorMessage);
+
+                $loginRoute = Route::has('authkit.login')
+                    ? route('authkit.login')
+                    : (Route::has('login') ? route('login') : '/login');
+
+                return redirect($loginRoute);
+            }
+        }
+
+        return null;
+    }
+
 }

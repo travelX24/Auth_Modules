@@ -37,11 +37,25 @@ class AuthController extends WebLoginController
             ], 401);
         }
 
+        // ✅ منع الدخول لو الحساب غير نشط (دائم للموبايل)
+        if ($user->getAttribute('is_active') === false) {
+            $msg = function_exists('tr')
+                ? tr('Your account is currently inactive.')
+                : 'Your account is currently inactive.';
+
+            return response()->json([
+                'ok'      => false,
+                'error'   => 'user_inactive',
+                'message' => $msg,
+            ], 403);
+        }
+
         /**
          * ✅ Mobile API only for employee users
+         * (هذا يحدد من يُسمح له بالموبايل من حيث كونه موظف)
          */
         if ((bool) config('authkit.api.employees_only', true)) {
-            $hasEmployeeId = !empty($user->employee_id);
+            $hasEmployeeId = ! empty($user->employee_id);
 
             $employeeExists = $hasEmployeeId;
             if ($hasEmployeeId && method_exists($user, 'employee')) {
@@ -59,18 +73,6 @@ class AuthController extends WebLoginController
                     'message' => $msg,
                 ], 403);
             }
-
-            if ($user->getAttribute('is_active') === false) {
-                $msg = function_exists('tr')
-                    ? tr('Your account is currently inactive.')
-                    : 'Your account is currently inactive.';
-
-                return response()->json([
-                    'ok'      => false,
-                    'error'   => 'user_inactive',
-                    'message' => $msg,
-                ], 403);
-            }
         }
 
         if ($resp = $this->checkCompanyStatusApi($user)) {
@@ -81,7 +83,12 @@ class AuthController extends WebLoginController
             return $resp;
         }
 
-        if (!method_exists($user, 'createToken')) {
+        // ✅ تحقق الرخصة للموبايل (access_type)
+        if ($resp = $this->checkMobileLicenseApi($user)) {
+            return $resp;
+        }
+
+        if (! method_exists($user, 'createToken')) {
             return response()->json([
                 'ok'      => false,
                 'error'   => 'sanctum_missing',
@@ -100,7 +107,7 @@ class AuthController extends WebLoginController
             'ok'           => true,
             'token_type'   => 'Bearer',
             'access_token' => $plainToken,
-            'user'         => $this->buildUserPayload($user), // ✅ NEW
+            'user'         => $this->buildUserPayload($user),
             'next'         => $this->nextForUser($request, $user),
         ]);
     }
@@ -129,7 +136,6 @@ class AuthController extends WebLoginController
             ],
         ]);
     }
-
 
     public function logout(Request $request)
     {
@@ -256,6 +262,46 @@ class AuthController extends WebLoginController
         return null;
     }
 
+    /**
+     * ✅ تحقق الرخصة للموبايل حسب access_type
+     * - hr_app_only: لازم يكون مربوط بموظف فعلياً
+     * - system_and_app: مسموح للموبايل أيضاً (حسب تصميمك الحالي)
+     */
+    protected function checkMobileLicenseApi($user)
+    {
+        $accessType = $user->access_type ?? 'system_and_app';
+
+        // ✅ لو قيمة غير معروفة اعتبرها نظام+تطبيق (Backward compatible)
+        if (! in_array($accessType, ['system_and_app', 'hr_app_only'], true)) {
+            $accessType = 'system_and_app';
+        }
+
+        // ✅ إذا الرخصة "تطبيق فقط" لازم يكون الحساب مربوط بموظف
+        if ($accessType === 'hr_app_only') {
+            $hasEmployeeId = ! empty($user->employee_id);
+
+            // لو العلاقة موجودة نتأكد انه الموظف موجود فعلاً
+            $employeeExists = $hasEmployeeId;
+            if ($hasEmployeeId && method_exists($user, 'employee')) {
+                $employeeExists = $user->employee()->exists();
+            }
+
+            if (! $employeeExists) {
+                $msg = function_exists('tr')
+                    ? tr('This account is not allowed to use the mobile app.')
+                    : 'This account is not allowed to use the mobile app.';
+
+                return response()->json([
+                    'ok'      => false,
+                    'error'   => 'not_mobile_user',
+                    'message' => $msg,
+                ], 403);
+            }
+        }
+
+        return null;
+    }
+
     protected function buildUserPayload($user): array
     {
         // ✅ فقط employee على User (تجنب department/jobTitle على User)
@@ -267,7 +313,7 @@ class AuthController extends WebLoginController
         $company = null;
         $companyInfo = null;
 
-        if (!empty($user->saas_company_id)) {
+        if (! empty($user->saas_company_id)) {
             $saasCompanyClass = class_exists(\Athka\Saas\Models\SaasCompany::class)
                 ? \Athka\Saas\Models\SaasCompany::class
                 : (class_exists(\App\Modules\Saas\Models\SaasCompany::class)
@@ -292,7 +338,7 @@ class AuthController extends WebLoginController
         // ✅ Employee + nested relations safely
         $employee = null;
 
-        if (!empty($user->employee_id) && isset($user->employee)) {
+        if (! empty($user->employee_id) && isset($user->employee)) {
             $employee = $user->employee;
 
             if ($employee && method_exists($employee, 'loadMissing')) {
@@ -302,7 +348,7 @@ class AuthController extends WebLoginController
                 if (method_exists($employee, 'job_title'))  $rels[] = 'job_title';
                 if (method_exists($employee, 'documents'))  $rels[] = 'documents';
 
-                if (!empty($rels)) {
+                if (! empty($rels)) {
                     $employee->loadMissing($rels);
                 }
             }
@@ -335,14 +381,19 @@ class AuthController extends WebLoginController
             'saas_company_id' => $user->saas_company_id ?? null,
             'employee_id'     => $user->employee_id ?? null,
 
+            // ✅ جديد (مهم للتطبيق)
+            'access_type'     => $user->access_type ?? 'system_and_app',
+            'access_scope'    => $user->access_scope ?? null,
+            'is_active'       => $user->is_active ?? true,
+
             'employee' => $employee ? [
-                'id'       => $employee->id ?? null,
-                'name_ar'  => $employee->name_ar ?? null,
-                'name_en'  => $employee->name_en ?? null,
-                'mobile'   => $employee->mobile ?? null,
-                'gender'   => $employee->gender ?? null,
-                'personal_photo_path' => $employee->documents->where('type', 'personal_photo')->first()?->file_path 
-                    ?? $employee->personal_photo_path 
+                'id'      => $employee->id ?? null,
+                'name_ar' => $employee->name_ar ?? null,
+                'name_en' => $employee->name_en ?? null,
+                'mobile'  => $employee->mobile ?? null,
+                'gender'  => $employee->gender ?? null,
+                'personal_photo_path' => $employee->documents->where('type', 'personal_photo')->first()?->file_path
+                    ?? $employee->personal_photo_path
                     ?? null,
 
                 'department' => (method_exists($employee, 'department') && $employee->relationLoaded('department') && $employee->department)
@@ -367,15 +418,15 @@ class AuthController extends WebLoginController
             ] : null,
 
             'company' => $company ? [
-                'id'                 => $company->id ?? null,
-                'legal_name_ar'      => $company->legal_name_ar ?? null,
-                'legal_name_en'      => $company->legal_name_en ?? null,
-                'primary_domain'     => $company->primary_domain ?? null,
-                'is_active'          => $company->is_active ?? null,
-                'subscription_ends_at' => $subscriptionEndsAt,
-                'allowed_users'        => $companyInfo?->allowed_users,
-                'official_email'       => $company->official_email ?? null,
-                'phone_1'              => $company->phone_1 ?? null,
+                'id'                  => $company->id ?? null,
+                'legal_name_ar'       => $company->legal_name_ar ?? null,
+                'legal_name_en'       => $company->legal_name_en ?? null,
+                'primary_domain'      => $company->primary_domain ?? null,
+                'is_active'           => $company->is_active ?? null,
+                'subscription_ends_at'=> $subscriptionEndsAt,
+                'allowed_users'       => $companyInfo?->allowed_users,
+                'official_email'      => $company->official_email ?? null,
+                'phone_1'             => $company->phone_1 ?? null,
             ] : null,
 
             'roles'       => $roles,
