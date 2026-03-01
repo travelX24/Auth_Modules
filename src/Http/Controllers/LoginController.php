@@ -135,7 +135,7 @@ class LoginController extends Controller
         $portPart = in_array($port, [80, 443], true) ? '' : ':'.$port;
 
         // ✅ بناء URL كامل على دومين الشركة
-        $url = $scheme.'://'.$desiredHost.$portPart.'/dashboard';
+        $url = $scheme.'://'.$desiredHost.$portPart.'/hello';
 
         return $url;
     }
