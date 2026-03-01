@@ -73,8 +73,9 @@ class LoginController extends Controller
                 return redirect()->away($companyUrl);
             }
 
-            if (Route::has('company-admin.dashboard')) {
-                return redirect()->route('company-admin.dashboard');
+            // Fallback: استخدام route إذا لم نتمكن من بناء URL
+            if (Route::has('company-admin.hello')) {
+                return redirect()->route('company-admin.hello');
             }
             return redirect('/');
         }
@@ -134,7 +135,7 @@ class LoginController extends Controller
         $portPart = in_array($port, [80, 443], true) ? '' : ':'.$port;
 
         // ✅ بناء URL كامل على دومين الشركة
-        $url = $scheme.'://'.$desiredHost.$portPart.'/dashboard';
+        $url = $scheme.'://'.$desiredHost.$portPart.'/company-admin/hello';
 
         return $url;
     }
