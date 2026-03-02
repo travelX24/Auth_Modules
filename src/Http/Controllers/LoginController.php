@@ -120,6 +120,7 @@ class LoginController extends Controller
         $base = strtolower(config('saas.tenant_base_domain', env('TENANT_BASE_DOMAIN', 'athkahr.com')));
         $central = strtolower(config('saas.central_domain', env('CENTRAL_DOMAIN', $base)));
 
+        $host = $request->getHost();
         // ✅ لو نحن على nip.io استخرج IP واصنع base/central ديناميكي
         if (preg_match('/\.(\d{1,3}(?:\.\d{1,3}){3})\.nip\.io$/', $host, $m)) {
             $ip = $m[1];
