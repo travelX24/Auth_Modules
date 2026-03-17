@@ -440,6 +440,9 @@ class AuthController extends WebLoginController
 
             'roles'       => $roles,
             'permissions' => $permissions,
+            'is_approver' => ($employee && (\Illuminate\Support\Facades\DB::table('employees')->where('manager_id', $employee->id)->exists() 
+                || \Illuminate\Support\Facades\DB::table('approval_policy_steps')->where('approver_id', $employee->id)->exists()
+                || \Illuminate\Support\Facades\DB::table('approval_tasks')->where('approver_employee_id', $employee->id)->exists())),
         ];
     }
 }
