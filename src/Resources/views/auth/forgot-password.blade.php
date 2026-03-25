@@ -10,7 +10,13 @@
         <x-ui.flash-toast />
 
         <!-- Form -->
-        <form method="POST" action="{{ route('authkit.password.email') }}" class="space-y-4 sm:space-y-5">
+        <form
+            method="POST"
+            action="{{ route('authkit.password.email') }}"
+            class="space-y-4 sm:space-y-5"
+            x-data="{ isSubmitting: false }"
+            @submit="if (isSubmitting) { $event.preventDefault(); return; } isSubmitting = true"
+        >
             @csrf
 
             <x-authkit::ui.auth-input
@@ -25,8 +31,11 @@
                     </svg>
                 </x-slot:icon>
             </x-authkit::ui.auth-input>
-    
-            <x-ui.primary-button class="w-full">
+
+            <x-ui.primary-button
+                class="w-full"
+                alpine-loading="isSubmitting"
+            >
                 @tr('Send reset link')
             </x-ui.primary-button>
 
