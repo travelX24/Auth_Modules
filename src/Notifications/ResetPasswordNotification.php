@@ -49,8 +49,10 @@ class ResetPasswordNotification extends Notification
             );
         }
 
-        $url = route($routeName, ['token' => $this->token], true);
-        $url .= (strpos($url, '?') === false ? '?' : '&') . 'email=' . urlencode($notifiable->getEmailForPasswordReset());
+        $email = $notifiable->getEmailForPasswordReset() ?: $notifiable->email;
+        if (!$email && property_exists($notifiable, 'email')) {
+            $email = $notifiable->email;
+        }
 
         $minutes = (int) config('auth.passwords.' . config('auth.defaults.passwords') . '.expire');
         $appName = (string) config('app.name', 'Athka HR');
@@ -77,20 +79,22 @@ class ResetPasswordNotification extends Notification
         App::setLocale($this->lang);
 
         try {
-               $email = $notifiable->getEmailForPasswordReset();
-
-                $custom = config('authkit.password_reset_url');
-                if ($custom) {
-                    // مثال: myapp://reset-password?token={token}&email={email}
-                    $url = str_replace(
-                        ['{token}', '{email}'],
-                        [$this->token, urlencode($email)],
-                        (string) $custom
-                    );
-                } else {
-                    // fallback: رابط الويب الحالي
-                    $url = url("/reset-password/{$this->token}?email=" . urlencode($email));
+            $custom = (string) config('authkit.password_reset_url');
+            if ($custom) {
+                // Check if {email} placeholder exists, otherwise append it
+                if (!str_contains($custom, '{email}')) {
+                    $custom .= (str_contains($custom, '?') ? '&' : '?') . 'email={email}';
                 }
+                $url = str_replace(
+                    ['{token}', '{email}'],
+                    [$this->token, urlencode((string) $email)],
+                    $custom
+                );
+            } else {
+                // Force the email parameter into the URL explicitly
+                $baseUrl = route($routeName, ['token' => $this->token], true);
+                $url = $baseUrl . (str_contains($baseUrl, '?') ? '&' : '?') . 'email=' . urlencode((string) $email);
+            }
 
             return (new MailMessage)
                 ->subject('Reset Password for ' . $companyName)

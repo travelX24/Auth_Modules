@@ -22,7 +22,7 @@
                     :label="tr('Email address')"
                     placeholder="your@email.com"
                     :value="$email"
-                    :value="$email">
+                    required>
                     <x-slot:icon>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -35,13 +35,15 @@
                     name="password"
                     :label="tr('New password')"
                     placeholder="••••••••"
-                    autocomplete="new-password" />
+                    autocomplete="new-password"
+                    required />
     
                 <x-ui.password-input
                     name="password_confirmation"
                     :label="tr('Confirm password')"
                     placeholder="••••••••"
-                    autocomplete="new-password" />
+                    autocomplete="new-password"
+                    required />
             </div>
     
             {{-- Actions --}}
