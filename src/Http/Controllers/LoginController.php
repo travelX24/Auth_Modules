@@ -308,7 +308,10 @@ $settings = $model::where('company_id', $user->saas_company_id)->first();
             $hasRolesRelation = method_exists($user, 'roles');
             $rolesCount = $hasRolesRelation ? $user->roles()->count() : 0;
 
-            if ($rolesCount === 0 && ! $this->isSaasAdmin($user)) {
+            // ✅ Allow users who have custom direct permissions (no role needed)
+            $hasCustomPermissions = (bool) ($user->has_custom_permissions ?? false);
+
+            if ($rolesCount === 0 && ! $hasCustomPermissions && ! $this->isSaasAdmin($user)) {
                 $errorMessage = function_exists('tr')
                     ? tr('No role is assigned to your account. Please contact system administration.')
                     : 'No role is assigned to your account. Please contact system administration.';
