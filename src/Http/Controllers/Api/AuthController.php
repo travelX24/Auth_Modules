@@ -88,6 +88,40 @@ class AuthController extends WebLoginController
             return $resp;
         }
 
+        // ✅ تقييد الأجهزة (جهاز واحد لكل موظف)
+        $incomingDeviceId = $request->input('device_id');
+        
+        if (!empty($incomingDeviceId)) {
+            $deviceUsedByAnother = $userModel::where('device_id', $incomingDeviceId)
+                ->where('id', '!=', $user->id)
+                ->exists();
+                
+            if ($deviceUsedByAnother) {
+                return response()->json([
+                    'ok'      => false,
+                    'error'   => 'device_linked_to_other',
+                    'message' => function_exists('tr') ? tr('This device is already linked to another employee.') : 'This device is already linked to another employee.',
+                ], 403);
+            }
+
+            if (empty($user->device_id)) {
+                $user->device_id = $incomingDeviceId;
+                $user->save();
+            } else {
+                if ($user->device_id !== $incomingDeviceId) {
+                    return response()->json([
+                        'ok'      => false,
+                        'error'   => 'device_mismatch',
+                        'message' => function_exists('tr') ? tr('Your account is linked to another device.') : 'Your account is linked to another device.',
+                    ], 403);
+                }
+            }
+        } else {
+            // Optional: Block login completely if device_id is missing
+            // Uncomment the next lines if older versions of the app should be strictly blocked from logging in.
+            // return response()->json(['ok' => false, 'error' => 'device_id_required', 'message' => tr('Please update the app to the latest version.')], 403);
+        }
+
         if (! method_exists($user, 'createToken')) {
             return response()->json([
                 'ok'      => false,
@@ -436,6 +470,7 @@ class AuthController extends WebLoginController
                 'allowed_users'       => $companyInfo?->allowed_users,
                 'official_email'      => $company->official_email ?? null,
                 'phone_1'             => $company->phone_1 ?? null,
+                'time_format'         => $companyInfo?->datetime_format ?? '24h',
             ] : null,
 
             'roles'       => $roles,

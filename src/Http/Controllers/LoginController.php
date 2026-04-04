@@ -39,6 +39,24 @@ class LoginController extends Controller
 
         $user = $request->user();
 
+        // ✅ التحقق من تفعيل المستخدم نفسه (منع دخول غير الفعالين)
+        if ($user->getAttribute('is_active') === false || $user->getAttribute('is_active') === 0) {
+            $errorMessage = function_exists('tr')
+                ? tr('Your account is currently inactive.')
+                : 'Your account is currently inactive.';
+
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            $request->session()->flash('error', $errorMessage);
+
+            $loginRoute = Route::has('authkit.login')
+                ? route('authkit.login')
+                : (Route::has('login') ? route('login') : '/login');
+
+            return redirect($loginRoute);
+        }
+
         // ✅ التحقق من حالة الشركة (تفعيل/إيقاف) قبل المتابعة
         $companyStatusCheck = $this->checkCompanyStatus($request, $user);
         if ($companyStatusCheck) {
