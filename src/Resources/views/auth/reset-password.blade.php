@@ -42,7 +42,13 @@
                     :label="tr('New password')"
                     placeholder="••••••••"
                     autocomplete="new-password"
-                    required />
+                    required>
+                    <x-slot:hint>
+                        <p class="mt-1.5 text-[11px] sm:text-xs text-slate-500/80 leading-relaxed">
+                            @tr('Must be at least 8 characters, including uppercase, lowercase, numbers, and special characters.')
+                        </p>
+                    </x-slot:hint>
+                </x-ui.password-input>
 
                 <x-ui.password-input
                     name="password_confirmation"
