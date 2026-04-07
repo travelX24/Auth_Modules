@@ -20,7 +20,8 @@ return [
         'token_name'      => env('AUTHKIT_TOKEN_NAME', 'mobile'),
         'token_abilities' => ['*'],
 
-        'employees_only'  => env('AUTHKIT_API_EMPLOYEES_ONLY', true), // ✅ NEW
+        'employees_only'  => env('AUTHKIT_API_EMPLOYEES_ONLY', true),
+        'skip_device_check' => env('AUTHKIT_API_SKIP_DEVICE_CHECK', false),
     ],
 
 

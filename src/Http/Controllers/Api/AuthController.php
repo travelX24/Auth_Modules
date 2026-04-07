@@ -91,7 +91,17 @@ class AuthController extends WebLoginController
         // ✅ تقييد الأجهزة (جهاز واحد لكل موظف)
         $incomingDeviceId = $request->input('device_id');
         
-        if (!empty($incomingDeviceId)) {
+        // Skip check based on app environment header and server debug settings
+        $appEnv = $request->header('X-App-Env');
+        if ($appEnv === 'prod') {
+            // Force strict mode for production app builds
+            $skipDeviceCheck = false;
+        } else {
+            // Allow bypassing for dev builds if server allows it
+            $skipDeviceCheck = config('authkit.api.skip_device_check') || config('app.debug', false);
+        }
+
+        if (!empty($incomingDeviceId) && !$skipDeviceCheck) {
             $deviceUsedByAnother = $userModel::where('device_id', $incomingDeviceId)
                 ->where('id', '!=', $user->id)
                 ->exists();
@@ -115,6 +125,12 @@ class AuthController extends WebLoginController
                         'message' => function_exists('tr') ? tr('Your account is linked to another device.') : 'Your account is linked to another device.',
                     ], 403);
                 }
+            }
+        } else if (!empty($incomingDeviceId) && $skipDeviceCheck) {
+            // Even if skipping check, store the device ID if not set
+            if (empty($user->device_id)) {
+                $user->device_id = $incomingDeviceId;
+                $user->save();
             }
         } else {
             // Optional: Block login completely if device_id is missing
