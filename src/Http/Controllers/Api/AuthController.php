@@ -102,9 +102,11 @@ class AuthController extends WebLoginController
         }
 
         if (!empty($incomingDeviceId) && !$skipDeviceCheck) {
+            // Check if device is used by ANOTHER ACTIVE employee
             $deviceUsedByAnother = $userModel::where('device_id', $incomingDeviceId)
                 ->where('id', '!=', $user->id)
-                ->exists();
+                ->where('is_active', true) // Only block if the other user is actually active
+                ->first();
                 
             if ($deviceUsedByAnother) {
                 return response()->json([
@@ -113,6 +115,12 @@ class AuthController extends WebLoginController
                     'message' => function_exists('tr') ? tr('This device is already linked to another employee.') : 'This device is already linked to another employee.',
                 ], 403);
             }
+
+            // If the device ID was linked to an INACTIVE user, clear it from them so this user can take it
+            $userModel::where('device_id', $incomingDeviceId)
+                ->where('id', '!=', $user->id)
+                ->where('is_active', false)
+                ->update(['device_id' => null]);
 
             if (empty($user->device_id)) {
                 $user->device_id = $incomingDeviceId;
