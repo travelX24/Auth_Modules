@@ -91,6 +91,26 @@ class AuthController extends WebLoginController
         // ✅ تقييد الأجهزة (جهاز واحد لكل موظف)
         $incomingDeviceId = $request->input('device_id');
         
+        // --- تجاهل المعرفات غير الفريدة (مثل أسماء الموديلات القديمة) ---
+        // إذا كان المعرف المرسل ليس UUID أو AndroidId (أي أنه اسم موديل)، نتجاهله مؤقتاً لتجنب التضارب بين الموظفين
+        if (!empty($incomingDeviceId)) {
+            $isUniqueFormat = false;
+            // التحقق من أن المعرف فريد (UUID للايفون، AndroidId للاندرويد، أو الفولباك)
+            if (strlen($incomingDeviceId) === 36 && substr_count($incomingDeviceId, '-') === 4) {
+                $isUniqueFormat = true; // iOS UUID
+            } elseif (strlen($incomingDeviceId) === 16 && ctype_xdigit($incomingDeviceId)) {
+                $isUniqueFormat = true; // AndroidId
+            } elseif (strpos($incomingDeviceId, 'athka_device_') === 0) {
+                $isUniqueFormat = true; // Fallback
+            }
+            
+            // إذا كان اسم موديل (ليس فريداً)، نعامله كأنه فارغ لكي يسمح بالدخول ولا يربطه بشكل خاطئ
+            if (!$isUniqueFormat) {
+                $incomingDeviceId = null;
+            }
+        }
+        // -------------------------------------------------------------
+
         // Skip check based on app environment header and server debug settings
         $appEnv = $request->header('X-App-Env');
         if ($appEnv === 'prod') {
