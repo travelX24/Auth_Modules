@@ -90,26 +90,6 @@ class AuthController extends WebLoginController
 
         // ✅ تقييد الأجهزة (جهاز واحد لكل موظف)
         $incomingDeviceId = $request->input('device_id');
-        
-        // --- تجاهل المعرفات غير الفريدة (مثل أسماء الموديلات القديمة) ---
-        // إذا كان المعرف المرسل ليس UUID أو AndroidId (أي أنه اسم موديل)، نتجاهله مؤقتاً لتجنب التضارب بين الموظفين
-        if (!empty($incomingDeviceId)) {
-            $isUniqueFormat = false;
-            // التحقق من أن المعرف فريد (UUID للايفون، AndroidId للاندرويد، أو الفولباك)
-            if (strlen($incomingDeviceId) === 36 && substr_count($incomingDeviceId, '-') === 4) {
-                $isUniqueFormat = true; // iOS UUID
-            } elseif (strlen($incomingDeviceId) === 16 && ctype_xdigit($incomingDeviceId)) {
-                $isUniqueFormat = true; // AndroidId
-            } elseif (strpos($incomingDeviceId, 'athka_device_') === 0) {
-                $isUniqueFormat = true; // Fallback
-            }
-            
-            // إذا كان اسم موديل (ليس فريداً)، نعامله كأنه فارغ لكي يسمح بالدخول ولا يربطه بشكل خاطئ
-            if (!$isUniqueFormat) {
-                $incomingDeviceId = null;
-            }
-        }
-        // -------------------------------------------------------------
 
         // Skip check based on app environment header and server debug settings
         $appEnv = $request->header('X-App-Env');
@@ -122,9 +102,10 @@ class AuthController extends WebLoginController
         }
 
         if (!empty($incomingDeviceId) && !$skipDeviceCheck) {
-            // Check if device is used by ANOTHER ACTIVE employee
+            // Check if device is used by ANOTHER ACTIVE employee in the SAME company
             $deviceUsedByAnother = $userModel::where('device_id', $incomingDeviceId)
                 ->where('id', '!=', $user->id)
+                ->where('saas_company_id', $user->saas_company_id)
                 ->where('is_active', true) // Only block if the other user is actually active
                 ->first();
                 
@@ -136,9 +117,10 @@ class AuthController extends WebLoginController
                 ], 403);
             }
 
-            // If the device ID was linked to an INACTIVE user, clear it from them so this user can take it
+            // If the device ID was linked to an INACTIVE user in the SAME company, clear it from them so this user can take it
             $userModel::where('device_id', $incomingDeviceId)
                 ->where('id', '!=', $user->id)
+                ->where('saas_company_id', $user->saas_company_id)
                 ->where('is_active', false)
                 ->update(['device_id' => null]);
 
