@@ -146,7 +146,21 @@ class AuthController extends WebLoginController
                 $user->device_id = $incomingDeviceId;
                 $user->save();
             } else {
-                if ($user->device_id !== $incomingDeviceId) {
+                // --- تنظيف تلقائي للبيانات القديمة في قاعدة البيانات ---
+                $storedDeviceIsUnique = false;
+                if (strlen($user->device_id) === 36 && substr_count($user->device_id, '-') === 4) {
+                    $storedDeviceIsUnique = true;
+                } elseif (strlen($user->device_id) === 16 && ctype_xdigit($user->device_id)) {
+                    $storedDeviceIsUnique = true;
+                } elseif (strpos($user->device_id, 'athka_device_') === 0) {
+                    $storedDeviceIsUnique = true;
+                }
+
+                // إذا كان المعرف المخزن قديماً (اسم موديل)، نقوم بتحديثه بالمعرف الفريد الجديد
+                if (!$storedDeviceIsUnique) {
+                    $user->device_id = $incomingDeviceId;
+                    $user->save();
+                } elseif ($user->device_id !== $incomingDeviceId) {
                     return response()->json([
                         'ok'      => false,
                         'error'   => 'device_mismatch',
