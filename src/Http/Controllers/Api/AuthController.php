@@ -378,9 +378,32 @@ class AuthController extends WebLoginController
 
     protected function buildUserPayload($user): array
     {
-        // ✅ فقط employee على User (تجنب department/jobTitle على User)
-        if (method_exists($user, 'loadMissing') && method_exists($user, 'employee')) {
-            $user->loadMissing(['employee']);
+        // ⚡ Eager-load relations to reduce database query roundtrips from 20+ to only 6-8
+        if (method_exists($user, 'loadMissing')) {
+            $relations = [];
+            if (method_exists($user, 'employee')) {
+                $relations[] = 'employee';
+                
+                $employeeClass = \Athka\Employees\Models\Employee::class;
+                if (class_exists($employeeClass)) {
+                    $empInstance = new $employeeClass;
+                    if (method_exists($empInstance, 'department')) $relations[] = 'employee.department';
+                    if (method_exists($empInstance, 'jobTitle'))   $relations[] = 'employee.jobTitle';
+                    if (method_exists($empInstance, 'job_title'))  $relations[] = 'employee.job_title';
+                    if (method_exists($empInstance, 'documents'))  $relations[] = 'employee.documents';
+                    if (method_exists($empInstance, 'branch'))     $relations[] = 'employee.branch';
+                }
+            }
+            if (method_exists($user, 'roles')) {
+                $relations[] = 'roles.permissions';
+            }
+            if (method_exists($user, 'permissions')) {
+                $relations[] = 'permissions';
+            }
+
+            if (! empty($relations)) {
+                $user->loadMissing($relations);
+            }
         }
 
         // ✅ Company
@@ -414,30 +437,25 @@ class AuthController extends WebLoginController
 
         if (! empty($user->employee_id) && isset($user->employee)) {
             $employee = $user->employee;
-
-            if ($employee && method_exists($employee, 'loadMissing')) {
-                $rels = [];
-                if (method_exists($employee, 'department')) $rels[] = 'department';
-                if (method_exists($employee, 'jobTitle'))   $rels[] = 'jobTitle';
-                if (method_exists($employee, 'job_title'))  $rels[] = 'job_title';
-                if (method_exists($employee, 'documents'))  $rels[] = 'documents';
-                if (method_exists($employee, 'branch'))     $rels[] = 'branch';
-
-                if (! empty($rels)) {
-                    $employee->loadMissing($rels);
-                }
-            }
         }
 
         // ✅ Roles / Permissions
         $roles = [];
         $permissions = [];
 
-        if (method_exists($user, 'getRoleNames')) {
+        if ($user->relationLoaded('roles')) {
+            $roles = $user->roles->pluck('name')->values()->all();
+        } elseif (method_exists($user, 'getRoleNames')) {
             $roles = $user->getRoleNames()->values()->all();
         }
 
-        if (method_exists($user, 'getAllPermissions')) {
+        if ($user->relationLoaded('permissions') && $user->relationLoaded('roles')) {
+            $permissions = $user->permissions->merge(
+                $user->roles->flatMap(function ($role) {
+                    return $role->permissions ?? collect();
+                })
+            )->pluck('name')->unique()->values()->all();
+        } elseif (method_exists($user, 'getAllPermissions')) {
             $permissions = $user->getAllPermissions()->pluck('name')->values()->all();
         }
 
