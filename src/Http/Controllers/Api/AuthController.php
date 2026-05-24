@@ -467,6 +467,25 @@ class AuthController extends WebLoginController
                 : (is_string($endsAt) ? $endsAt : null);
         }
 
+        $annualLeaveDays = null;
+        if ($employee) {
+            try {
+                $annualLeaveDays = method_exists($employee, 'calculateLeaveEntitlement')
+                    ? (float) $employee->calculateLeaveEntitlement()
+                    : (float) (
+                        $employee->is_transferred_employee
+                            ? (($employee->opening_leave_balance ?? 0) + ($employee->leave_balance_adjustments ?? 0))
+                            : (($employee->annual_leave_days ?? 30) + ($employee->leave_balance_adjustments ?? 0))
+                    );
+            } catch (\Throwable $e) {
+                $annualLeaveDays = (float) (
+                    $employee->is_transferred_employee
+                        ? (($employee->opening_leave_balance ?? 0) + ($employee->leave_balance_adjustments ?? 0))
+                        : (($employee->annual_leave_days ?? 30) + ($employee->leave_balance_adjustments ?? 0))
+                );
+            }
+        }
+
         return [
             'id'              => $user->id,
             'name'            => $user->name ?? null,
@@ -488,6 +507,7 @@ class AuthController extends WebLoginController
                 'personal_photo_path' => $employee->documents->where('type', 'personal_photo')->first()?->file_path
                     ?? $employee->personal_photo_path
                     ?? null,
+                'annual_leave_days' => $annualLeaveDays,
 
                 'department' => (method_exists($employee, 'department') && $employee->relationLoaded('department') && $employee->department)
                     ? [
