@@ -19,10 +19,12 @@ class ForgotPasswordController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        $status = Password::sendResetLink($request->only('email'));
+        Password::sendResetLink($request->only('email'));
 
-        return $status === Password::RESET_LINK_SENT
-            ? back()->with('status', __($status))
-            : back()->withErrors(['email' => __($status)]);
+        $message = function_exists('tr')
+            ? tr('If the email exists, we have sent a password reset link.')
+            : 'If the email exists, we have sent a password reset link.';
+
+        return back()->with('status', $message);
     }
 }

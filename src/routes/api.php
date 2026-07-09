@@ -22,7 +22,7 @@ Route::prefix($prefix)->as($as)->middleware($mw)->group(function () use ($authMw
 
     // Password
     Route::post('/change-password', [PasswordController::class, 'change'])->middleware($authMw)->name('password.change');
-    Route::post('/forgot-password', [PasswordController::class, 'forgot'])->name('password.forgot');
-    Route::post('/reset-password',  [PasswordController::class, 'reset'])->name('password.reset');
+    Route::post('/forgot-password', [PasswordController::class, 'forgot'])->middleware('throttle:5,1')->name('password.forgot');
+    Route::post('/reset-password',  [PasswordController::class, 'reset'])->middleware('throttle:10,1')->name('password.reset');
 });
 

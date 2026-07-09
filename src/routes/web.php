@@ -17,7 +17,7 @@ Route::middleware('web')->group(function () use ($prefix, $as) {
 
     // Password reset routes
     Route::get('/forgot-password', [ForgotPasswordController::class, 'show'])->name($as.'password.request');
-    Route::post('/forgot-password', [ForgotPasswordController::class, 'send'])->name($as.'password.email');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'send'])->middleware('throttle:5,1')->name($as.'password.email');
     Route::get('/reset-password/{token}', [ResetPasswordController::class, 'show'])->name($as.'password.reset');
-    Route::post('/reset-password', [ResetPasswordController::class, 'update'])->name($as.'password.update');
+    Route::post('/reset-password', [ResetPasswordController::class, 'update'])->middleware('throttle:10,1')->name($as.'password.update');
 });

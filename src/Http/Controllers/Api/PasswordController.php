@@ -31,6 +31,8 @@ class PasswordController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        $this->revokeApiTokens($user, keepCurrent: true);
+
         return response()->json([
             'ok'      => true,
             'message' => __('authkit::auth.password_changed') ?: 'Password has been changed successfully.',
@@ -39,22 +41,13 @@ class PasswordController extends Controller
 
     public function forgot(ForgotPasswordRequest $request)
     {
-        $status = Password::sendResetLink($request->only('email'));
-
-        if ($status === Password::RESET_LINK_SENT) {
-            return response()->json([
-                'ok'      => true,
-                'message' => UiMsg::toText($status) ?? __($status),
-            ]);
-        }
-
-        $msg = UiMsg::toText($status) ?? __($status);
+        Password::sendResetLink($request->only('email'));
 
         return response()->json([
-            'ok'      => false,
-            'message' => $msg,
-            'errors'  => ['email' => [$msg]],
-        ], 422);
+            'ok'          => true,
+            'message'     => $this->genericResetLinkMessage(),
+            'retry_after' => $this->passwordResetThrottleSeconds(),
+        ]);
     }
 
     public function reset(ResetPasswordRequest $request)
@@ -66,6 +59,8 @@ class PasswordController extends Controller
                     'password'       => Hash::make((string) $request->input('password')),
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                $this->revokeApiTokens($user);
             }
         );
 
@@ -80,5 +75,36 @@ class PasswordController extends Controller
             'ok'      => false,
             'message' => UiMsg::toText($status) ?? __($status),
         ], 422);
+    }
+    private function genericResetLinkMessage(): string
+    {
+        return function_exists('tr')
+            ? tr('If the email exists, we have sent a password reset link.')
+            : 'If the email exists, we have sent a password reset link.';
+    }
+
+    private function passwordResetThrottleSeconds(): int
+    {
+        $broker = (string) config('auth.defaults.passwords', 'users');
+
+        return (int) config("auth.passwords.{$broker}.throttle", 60);
+    }
+
+    private function revokeApiTokens($user, bool $keepCurrent = false): void
+    {
+        if (! method_exists($user, 'tokens')) {
+            return;
+        }
+
+        $query = $user->tokens();
+
+        if ($keepCurrent && method_exists($user, 'currentAccessToken')) {
+            $currentToken = $user->currentAccessToken();
+            if ($currentToken && isset($currentToken->id)) {
+                $query->where('id', '!=', $currentToken->id);
+            }
+        }
+
+        $query->delete();
     }
 }

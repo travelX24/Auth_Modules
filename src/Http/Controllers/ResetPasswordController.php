@@ -14,8 +14,8 @@ class ResetPasswordController extends Controller
     public function show(Request $request, string $token)
     {
         $email = $request->query('email');
-        $table = \Illuminate\Support\Facades\DB::table('password_reset_tokens')->exists() 
-            ? 'password_reset_tokens' 
+        $table = \Illuminate\Support\Facades\Schema::hasTable('password_reset_tokens')
+            ? 'password_reset_tokens'
             : 'password_resets';
         
         $isValid = false;
@@ -65,6 +65,10 @@ class ResetPasswordController extends Controller
                     'password'       => Hash::make((string) $request->input('password')),
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                if (method_exists($user, 'tokens')) {
+                    $user->tokens()->delete();
+                }
 
             }
         );
