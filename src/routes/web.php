@@ -12,7 +12,7 @@ $as = $as === '' ? '' : rtrim($as, '.').'.';
 Route::middleware('web')->group(function () use ($prefix, $as) {
     // Login routes
     Route::get($prefix ?: '/login', [LoginController::class, 'show'])->name($as.'login');
-    Route::post($prefix ?: '/login', [LoginController::class, 'store'])->name($as.'login.store');
+    Route::post($prefix ?: '/login', [LoginController::class, 'store'])->middleware('throttle:login')->name($as.'login.store');
     Route::post('/logout', [LoginController::class, 'logout'])->name($as.'logout');
 
     // Password reset routes

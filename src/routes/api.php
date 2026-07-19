@@ -13,7 +13,7 @@ $authMw = (array) config('authkit.api.auth_middleware', ['auth:sanctum']);
 
 Route::prefix($prefix)->as($as)->middleware($mw)->group(function () use ($authMw) {
     // Auth
-    Route::post('/login',  [AuthController::class, 'login'])->name('login');
+    Route::post('/login',  [AuthController::class, 'login'])->middleware('throttle:login')->name('login');
     Route::post('/logout', [AuthController::class, 'logout'])->middleware($authMw)->name('logout');
     Route::get('/me',      [AuthController::class, 'me'])->middleware($authMw)->name('me');
 
