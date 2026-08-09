@@ -19,6 +19,7 @@ return [
         'auth_middleware' => ['auth:sanctum'],
         'token_name'      => env('AUTHKIT_TOKEN_NAME', 'mobile'),
         'token_abilities' => ['*'],
+        'token_expiration_minutes' => env('AUTHKIT_TOKEN_EXPIRATION_MINUTES', 43200),
 
         'employees_only'  => env('AUTHKIT_API_EMPLOYEES_ONLY', true),
         'skip_device_check' => env('AUTHKIT_API_SKIP_DEVICE_CHECK', false),

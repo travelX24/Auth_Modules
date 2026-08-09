@@ -12,6 +12,10 @@ use Illuminate\Support\Str;
 
 class AuthController extends WebLoginController
 {
+    private array $saasCompanyCache = [];
+
+    private array $saasCompanyInfoCache = [];
+
     public function login(LoginRequest $request)
     {
         $email    = (string) $request->input('email');
@@ -175,7 +179,12 @@ class AuthController extends WebLoginController
         $ua         = Str::limit((string) $request->userAgent(), 80, '');
         $tokenLabel = $tokenName . '|' . $ua;
 
-        $plainToken = $user->createToken($tokenLabel, $abilities)->plainTextToken;
+        $plainToken = $this->createPlainTextToken(
+            $user,
+            $tokenLabel,
+            $abilities,
+            $this->apiTokenExpiresAt()
+        );
 
         return response()->json([
             'ok'           => true,
@@ -263,17 +272,7 @@ class AuthController extends WebLoginController
             return null;
         }
 
-        $saasCompanyClass = class_exists(\Athka\Saas\Models\SaasCompany::class)
-            ? \Athka\Saas\Models\SaasCompany::class
-            : (class_exists(\App\Modules\Saas\Models\SaasCompany::class)
-                ? \App\Modules\Saas\Models\SaasCompany::class
-                : null);
-
-        if (! $saasCompanyClass) {
-            return null;
-        }
-
-        $company = $saasCompanyClass::find($user->saas_company_id);
+        $company = $this->resolveSaasCompany((int) $user->saas_company_id);
 
         if (! $company) {
             return null;
@@ -300,17 +299,7 @@ class AuthController extends WebLoginController
             return null;
         }
 
-        $model = class_exists(\Athka\Saas\Models\SaasCompanyOtherinfo::class)
-            ? \Athka\Saas\Models\SaasCompanyOtherinfo::class
-            : (class_exists(\App\Modules\Saas\Models\SaasCompanyOtherinfo::class)
-                ? \App\Modules\Saas\Models\SaasCompanyOtherinfo::class
-                : null);
-
-        if (! $model) {
-            return null;
-        }
-
-        $settings = $model::where('company_id', $user->saas_company_id)->first();
+        $settings = $this->resolveSaasCompanyInfo((int) $user->saas_company_id);
 
         if (! $settings || ! $settings->subscription_ends_at) {
             return null;
@@ -390,7 +379,6 @@ class AuthController extends WebLoginController
                     if (method_exists($empInstance, 'department')) $relations[] = 'employee.department';
                     if (method_exists($empInstance, 'jobTitle'))   $relations[] = 'employee.jobTitle';
                     if (method_exists($empInstance, 'job_title'))  $relations[] = 'employee.job_title';
-                    if (method_exists($empInstance, 'documents'))  $relations[] = 'employee.documents';
                     if (method_exists($empInstance, 'branch'))     $relations[] = 'employee.branch';
                 }
             }
@@ -411,25 +399,8 @@ class AuthController extends WebLoginController
         $companyInfo = null;
 
         if (! empty($user->saas_company_id)) {
-            $saasCompanyClass = class_exists(\Athka\Saas\Models\SaasCompany::class)
-                ? \Athka\Saas\Models\SaasCompany::class
-                : (class_exists(\App\Modules\Saas\Models\SaasCompany::class)
-                    ? \App\Modules\Saas\Models\SaasCompany::class
-                    : null);
-
-            $saasOtherInfoClass = class_exists(\Athka\Saas\Models\SaasCompanyOtherinfo::class)
-                ? \Athka\Saas\Models\SaasCompanyOtherinfo::class
-                : (class_exists(\App\Modules\Saas\Models\SaasCompanyOtherinfo::class)
-                    ? \App\Modules\Saas\Models\SaasCompanyOtherinfo::class
-                    : null);
-
-            if ($saasCompanyClass) {
-                $company = $saasCompanyClass::find($user->saas_company_id);
-            }
-
-            if ($saasOtherInfoClass) {
-                $companyInfo = $saasOtherInfoClass::where('company_id', $user->saas_company_id)->first();
-            }
+            $company = $this->resolveSaasCompany((int) $user->saas_company_id);
+            $companyInfo = $this->resolveSaasCompanyInfo((int) $user->saas_company_id);
         }
 
         // ✅ Employee + nested relations safely
@@ -437,6 +408,27 @@ class AuthController extends WebLoginController
 
         if (! empty($user->employee_id) && isset($user->employee)) {
             $employee = $user->employee;
+        }
+
+        $personalPhotoPath = null;
+        if ($employee) {
+            $personalPhotoPath = $employee->personal_photo_path ?? null;
+
+            if (method_exists($employee, 'relationLoaded') && $employee->relationLoaded('documents')) {
+                $personalPhotoPath = $employee->documents->where('type', 'personal_photo')->first()?->file_path
+                    ?? $personalPhotoPath;
+            } elseif (\Illuminate\Support\Facades\Schema::hasTable('employee_documents')) {
+                $photoQuery = \Illuminate\Support\Facades\DB::table('employee_documents')
+                    ->where('employee_id', $employee->id)
+                    ->where('type', 'personal_photo');
+
+                if (\Illuminate\Support\Facades\Schema::hasColumn('employee_documents', 'deleted_at')) {
+                    $photoQuery->whereNull('deleted_at');
+                }
+
+                $personalPhotoPath = $photoQuery->orderBy('id')->value('file_path')
+                    ?? $personalPhotoPath;
+            }
         }
 
         // ✅ Roles / Permissions
@@ -504,9 +496,7 @@ class AuthController extends WebLoginController
                 'name_en' => $employee->name_en ?? null,
                 'mobile'  => $employee->mobile ?? null,
                 'gender'  => $employee->gender ?? null,
-                'personal_photo_path' => $employee->documents->where('type', 'personal_photo')->first()?->file_path
-                    ?? $employee->personal_photo_path
-                    ?? null,
+                'personal_photo_path' => $personalPhotoPath,
                 'annual_leave_days' => $annualLeaveDays,
 
                 'department' => (method_exists($employee, 'department') && $employee->relationLoaded('department') && $employee->department)
@@ -557,5 +547,67 @@ class AuthController extends WebLoginController
                 || \Illuminate\Support\Facades\DB::table('approval_policy_steps')->where('approver_id', $employee->id)->exists()
                 || \Illuminate\Support\Facades\DB::table('approval_tasks')->where('approver_employee_id', $employee->id)->exists())),
         ];
+    }
+
+    protected function apiTokenExpiresAt(): ?Carbon
+    {
+        $minutes = config('authkit.api.token_expiration_minutes');
+
+        if ($minutes === null || $minutes === '' || (int) $minutes <= 0) {
+            return null;
+        }
+
+        return now()->addMinutes((int) $minutes);
+    }
+
+    protected function createPlainTextToken($user, string $tokenLabel, array $abilities, ?Carbon $expiresAt): string
+    {
+        $method = new \ReflectionMethod($user, 'createToken');
+
+        if ($expiresAt && $method->getNumberOfParameters() >= 3) {
+            return $user->createToken($tokenLabel, $abilities, $expiresAt)->plainTextToken;
+        }
+
+        return $user->createToken($tokenLabel, $abilities)->plainTextToken;
+    }
+
+    protected function resolveSaasCompany(int $companyId)
+    {
+        if ($companyId <= 0) {
+            return null;
+        }
+
+        if (array_key_exists($companyId, $this->saasCompanyCache)) {
+            return $this->saasCompanyCache[$companyId];
+        }
+
+        $class = class_exists(\Athka\Saas\Models\SaasCompany::class)
+            ? \Athka\Saas\Models\SaasCompany::class
+            : (class_exists(\App\Modules\Saas\Models\SaasCompany::class)
+                ? \App\Modules\Saas\Models\SaasCompany::class
+                : null);
+
+        return $this->saasCompanyCache[$companyId] = $class ? $class::find($companyId) : null;
+    }
+
+    protected function resolveSaasCompanyInfo(int $companyId)
+    {
+        if ($companyId <= 0) {
+            return null;
+        }
+
+        if (array_key_exists($companyId, $this->saasCompanyInfoCache)) {
+            return $this->saasCompanyInfoCache[$companyId];
+        }
+
+        $class = class_exists(\Athka\Saas\Models\SaasCompanyOtherinfo::class)
+            ? \Athka\Saas\Models\SaasCompanyOtherinfo::class
+            : (class_exists(\App\Modules\Saas\Models\SaasCompanyOtherinfo::class)
+                ? \App\Modules\Saas\Models\SaasCompanyOtherinfo::class
+                : null);
+
+        return $this->saasCompanyInfoCache[$companyId] = $class
+            ? $class::where('company_id', $companyId)->first()
+            : null;
     }
 }

@@ -18,18 +18,19 @@ class ResetPasswordController extends Controller
             ? 'password_reset_tokens'
             : 'password_resets';
         
-        $isValid = false;
-        $record  = null;
+        $record = $email
+            ? \Illuminate\Support\Facades\DB::table($table)->where('email', $email)->first()
+            : null;
 
-        // Find the record by token
-        $allRecords = \Illuminate\Support\Facades\DB::table($table)->get();
-        foreach ($allRecords as $r) {
-            if (\Illuminate\Support\Facades\Hash::check($token, $r->token) || $token === $r->token) {
-                $record = $r;
-                $isValid = true;
-                break;
-            }
+        // Legacy fallback keeps old links without an email query working.
+        if (! $record && ! $email) {
+            $record = \Illuminate\Support\Facades\DB::table($table)->get()->first(function ($r) use ($token) {
+                return \Illuminate\Support\Facades\Hash::check($token, $r->token) || $token === $r->token;
+            });
         }
+
+        $isValid = $record
+            && (\Illuminate\Support\Facades\Hash::check($token, $record->token) || $token === $record->token);
 
         // 1. Check if token exists
         if (!$isValid || !$record) {
