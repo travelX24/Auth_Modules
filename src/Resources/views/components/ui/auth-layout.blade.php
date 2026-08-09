@@ -78,6 +78,7 @@
     <x-ui.toast />
     
     {{ $slot }}
+        <x-ui.modal-loading-overlay />
     @livewireScripts
 
 </body>
