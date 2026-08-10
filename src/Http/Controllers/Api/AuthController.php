@@ -16,6 +16,10 @@ class AuthController extends WebLoginController
 
     private array $saasCompanyInfoCache = [];
 
+    private static ?bool $employeeDocumentsTableExists = null;
+
+    private static ?bool $employeeDocumentsHasDeletedAt = null;
+
     public function login(LoginRequest $request)
     {
         $email    = (string) $request->input('email');
@@ -417,12 +421,12 @@ class AuthController extends WebLoginController
             if (method_exists($employee, 'relationLoaded') && $employee->relationLoaded('documents')) {
                 $personalPhotoPath = $employee->documents->where('type', 'personal_photo')->first()?->file_path
                     ?? $personalPhotoPath;
-            } elseif (\Illuminate\Support\Facades\Schema::hasTable('employee_documents')) {
+            } elseif ($this->hasEmployeeDocumentsTable()) {
                 $photoQuery = \Illuminate\Support\Facades\DB::table('employee_documents')
                     ->where('employee_id', $employee->id)
                     ->where('type', 'personal_photo');
 
-                if (\Illuminate\Support\Facades\Schema::hasColumn('employee_documents', 'deleted_at')) {
+                if ($this->employeeDocumentsHasDeletedAtColumn()) {
                     $photoQuery->whereNull('deleted_at');
                 }
 
@@ -569,6 +573,20 @@ class AuthController extends WebLoginController
         }
 
         return $user->createToken($tokenLabel, $abilities)->plainTextToken;
+    }
+
+    protected function hasEmployeeDocumentsTable(): bool
+    {
+        return self::$employeeDocumentsTableExists ??= \Illuminate\Support\Facades\Schema::hasTable('employee_documents');
+    }
+
+    protected function employeeDocumentsHasDeletedAtColumn(): bool
+    {
+        if (! $this->hasEmployeeDocumentsTable()) {
+            return false;
+        }
+
+        return self::$employeeDocumentsHasDeletedAt ??= \Illuminate\Support\Facades\Schema::hasColumn('employee_documents', 'deleted_at');
     }
 
     protected function resolveSaasCompany(int $companyId)

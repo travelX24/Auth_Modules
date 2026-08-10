@@ -17,6 +17,7 @@ class ResetPasswordController extends Controller
         $table = \Illuminate\Support\Facades\Schema::hasTable('password_reset_tokens')
             ? 'password_reset_tokens'
             : 'password_resets';
+        $expires = config('auth.passwords.users.expire', 60);
         
         $record = $email
             ? \Illuminate\Support\Facades\DB::table($table)->where('email', $email)->first()
@@ -24,9 +25,12 @@ class ResetPasswordController extends Controller
 
         // Legacy fallback keeps old links without an email query working.
         if (! $record && ! $email) {
-            $record = \Illuminate\Support\Facades\DB::table($table)->get()->first(function ($r) use ($token) {
-                return \Illuminate\Support\Facades\Hash::check($token, $r->token) || $token === $r->token;
-            });
+            $record = \Illuminate\Support\Facades\DB::table($table)
+                ->where('created_at', '>=', now()->subMinutes($expires))
+                ->get()
+                ->first(function ($r) use ($token) {
+                    return \Illuminate\Support\Facades\Hash::check($token, $r->token) || $token === $r->token;
+                });
         }
 
         $isValid = $record
@@ -39,7 +43,6 @@ class ResetPasswordController extends Controller
         }
 
         // 2. Check if token is expired
-        $expires = config('auth.passwords.users.expire', 60);
         $createdAt = \Carbon\Carbon::parse($record->created_at);
         
         if ($createdAt->addMinutes($expires)->isPast()) {
