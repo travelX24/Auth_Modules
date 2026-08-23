@@ -29,6 +29,7 @@ class PasswordController extends Controller
 
         $user->update([
             'password' => Hash::make($request->password),
+            'must_change_password' => false,
         ]);
 
         $this->revokeApiTokens($user, keepCurrent: true);
@@ -56,8 +57,9 @@ class PasswordController extends Controller
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user) use ($request) {
                 $user->forceFill([
-                    'password'       => Hash::make((string) $request->input('password')),
-                    'remember_token' => Str::random(60),
+                    'password'             => Hash::make((string) $request->input('password')),
+                    'remember_token'       => Str::random(60),
+                    'must_change_password' => false,
                 ])->save();
 
                 $this->revokeApiTokens($user);
@@ -76,6 +78,7 @@ class PasswordController extends Controller
             'message' => UiMsg::toText($status) ?? __($status),
         ], 422);
     }
+
     private function genericResetLinkMessage(): string
     {
         return function_exists('tr')
