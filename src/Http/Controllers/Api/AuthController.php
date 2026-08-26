@@ -465,21 +465,33 @@ class AuthController extends WebLoginController
 
         $annualLeaveDays = null;
         if ($employee) {
-            try {
-                $annualLeaveDays = method_exists($employee, 'calculateLeaveEntitlement')
-                    ? (float) $employee->calculateLeaveEntitlement()
-                    : (float) (
+            $cacheKey = "emp_annual_leave_{$employee->id}_" . date('Y-m-d');
+            $annualLeaveDays = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($employee) {
+                try {
+                    return method_exists($employee, 'calculateLeaveEntitlement')
+                        ? (float) $employee->calculateLeaveEntitlement()
+                        : (float) (
+                            $employee->is_transferred_employee
+                                ? (($employee->opening_leave_balance ?? 0) + ($employee->leave_balance_adjustments ?? 0))
+                                : (($employee->annual_leave_days ?? 30) + ($employee->leave_balance_adjustments ?? 0))
+                        );
+                } catch (\Throwable $e) {
+                    return (float) (
                         $employee->is_transferred_employee
                             ? (($employee->opening_leave_balance ?? 0) + ($employee->leave_balance_adjustments ?? 0))
                             : (($employee->annual_leave_days ?? 30) + ($employee->leave_balance_adjustments ?? 0))
                     );
-            } catch (\Throwable $e) {
-                $annualLeaveDays = (float) (
-                    $employee->is_transferred_employee
-                        ? (($employee->opening_leave_balance ?? 0) + ($employee->leave_balance_adjustments ?? 0))
-                        : (($employee->annual_leave_days ?? 30) + ($employee->leave_balance_adjustments ?? 0))
-                );
-            }
+                }
+            });
+        }
+
+        $isApprover = false;
+        if ($employee) {
+            $isApprover = \Illuminate\Support\Facades\Cache::remember("emp_is_approver_{$employee->id}", 600, function () use ($employee) {
+                return \Illuminate\Support\Facades\DB::table('employees')->where('manager_id', $employee->id)->exists() 
+                    || \Illuminate\Support\Facades\DB::table('approval_policy_steps')->where('approver_id', $employee->id)->exists()
+                    || \Illuminate\Support\Facades\DB::table('approval_tasks')->where('approver_employee_id', $employee->id)->exists();
+            });
         }
 
         return [
@@ -547,9 +559,7 @@ class AuthController extends WebLoginController
 
             'roles'       => $roles,
             'permissions' => $permissions,
-            'is_approver' => ($employee && (\Illuminate\Support\Facades\DB::table('employees')->where('manager_id', $employee->id)->exists() 
-                || \Illuminate\Support\Facades\DB::table('approval_policy_steps')->where('approver_id', $employee->id)->exists()
-                || \Illuminate\Support\Facades\DB::table('approval_tasks')->where('approver_employee_id', $employee->id)->exists())),
+            'is_approver' => $isApprover,
         ];
     }
 
