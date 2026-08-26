@@ -36,5 +36,8 @@ class AuthKitServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
         $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'authkit');
         $this->loadTranslationsFrom(__DIR__ . '/../Resources/lang', 'authkit');
+
+        // ✅ Register IAM & Auth Events Audit Subscriber
+        \Illuminate\Support\Facades\Event::subscribe(\Athka\AuthKit\Listeners\AuditAuthEventsSubscriber::class);
     }
 }
